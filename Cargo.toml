@@ -1,7 +1,7 @@
 [package]
 name = "multibase"
-version = "0.9.1"
-authors = ["Friedel Ziegelmayer <dignifiedquire@gmail.com>"]
+version = "1.0.0"
+authors = ["Friedel Ziegelmayer <dignifiedquire@gmail.com>", "Dave Grantham <dwg@linuxprogrammer.org>"]
 edition = "2018"
 license = "MIT"
 readme = "README.md"

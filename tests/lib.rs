@@ -3,7 +3,7 @@ use multibase::{decode, encode, Base, Base::*};
 fn encode_decode_assert(input: &[u8], test_cases: Vec<(Base, &str)>) {
     for (base, output) in test_cases {
         assert_eq!(encode(base, input), output);
-        assert_eq!(decode(output).unwrap(), (base, input.to_vec()));
+        assert_eq!(decode(output, true).unwrap(), (base, input.to_vec()));
     }
 }
 
@@ -29,7 +29,7 @@ fn test_round_trip() {
 
     for case in test_cases {
         let encoded = encode(Base58Btc, case);
-        let decoded = decode(encoded).unwrap();
+        let decoded = decode(encoded, true).unwrap();
         assert_eq!(decoded, (Base58Btc, case.as_bytes().to_vec()))
     }
 }
@@ -151,6 +151,6 @@ fn case_insensitivity() {
         (Base36Upper, "KfUVrSIVVnFRbJWAJo"),
     ];
     for (base, output) in test_cases {
-        assert_eq!(decode(output).unwrap(), (base, input.to_vec()));
+        assert_eq!(decode(output, false).unwrap(), (base, input.to_vec()));
     }
 }

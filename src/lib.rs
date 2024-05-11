@@ -27,15 +27,15 @@ pub use self::error::{Error, Result};
 /// use multibase::{Base, decode};
 ///
 /// assert_eq!(
-///     decode("zCn8eVZg").unwrap(),
+///     decode("zCn8eVZg", true).unwrap(),
 ///     (Base::Base58Btc, b"hello".to_vec())
 /// );
 /// ```
-pub fn decode<T: AsRef<str>>(input: T) -> Result<(Base, Vec<u8>)> {
+pub fn decode<T: AsRef<str>>(input: T, strict: bool) -> Result<(Base, Vec<u8>)> {
     let input = input.as_ref();
     let code = input.chars().next().ok_or(Error::InvalidBaseString)?;
     let base = Base::from_code(code)?;
-    let decoded = base.decode(&input[code.len_utf8()..])?;
+    let decoded = base.decode(&input[code.len_utf8()..], strict)?;
     Ok((base, decoded))
 }
 

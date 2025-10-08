@@ -53,17 +53,17 @@ fn bench_decode(c: &mut Criterion) {
     let mut group = c.benchmark_group("decode");
     group.bench_function("base32", |b| {
         b.iter(|| {
-            let _ = black_box(decode(&base32_data).unwrap());
+            let _ = black_box(decode(&base32_data, false).unwrap());
         })
     });
     group.bench_function("base58btc", |b| {
         b.iter(|| {
-            let _ = black_box(decode(&base58_data).unwrap());
+            let _ = black_box(decode(&base58_data, false).unwrap());
         })
     });
     group.bench_function("base64", |b| {
         b.iter(|| {
-            let _ = black_box(decode(&base64_data).unwrap());
+            let _ = black_box(decode(&base64_data, false).unwrap());
         })
     });
     group.finish();

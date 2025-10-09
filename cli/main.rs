@@ -2,46 +2,48 @@ use std::fmt;
 use std::io::{self, Read, Write};
 use std::str::FromStr;
 
-use anyhow::{anyhow, Error, Result};
+use anyhow::{anyhow, Context, Error, Result};
+use clap::Parser;
 use multibase::Base;
-use structopt::StructOpt;
 
-#[derive(StructOpt, Debug)]
+#[derive(Parser, Debug)]
 struct Opts {
     /// The mode
-    #[structopt(subcommand)]
+    #[command(subcommand)]
     mode: Mode,
 }
 
-#[derive(StructOpt, Debug)]
+#[derive(Parser, Debug)]
 enum Mode {
-    #[structopt(name = "encode")]
+    /// Encode data to multibase format
     Encode {
         /// The base to use for encoding.
-        #[structopt(short = "b", long = "base", default_value = "base58btc")]
+        #[arg(short = 'b', long = "base", default_value = "base58btc")]
         base: StrBase,
         /// The data to encode. Reads from stdin if not provided.
-        #[structopt(short = "i", long = "input")]
+        #[arg(short = 'i', long = "input")]
         input: Option<String>,
     },
-    #[structopt(name = "decode")]
+    /// Decode multibase-encoded data
     Decode {
         /// The data to decode. Reads from stdin if not provided.
-        #[structopt(short = "i", long = "input")]
+        #[arg(short = 'i', long = "input")]
         input: Option<String>,
     },
 }
 
 fn main() -> Result<()> {
     env_logger::init();
-    let opts = Opts::from_args();
+    let opts = Opts::parse();
     match opts.mode {
         Mode::Encode { base, input } => {
             let input_bytes = match input {
                 Some(s) => s.into_bytes(),
                 None => {
                     let mut buf = Vec::new();
-                    io::stdin().read_to_end(&mut buf)?;
+                    io::stdin()
+                        .read_to_end(&mut buf)
+                        .context("Failed to read input from stdin")?;
                     buf
                 }
             };
@@ -52,7 +54,9 @@ fn main() -> Result<()> {
                 Some(s) => s,
                 None => {
                     let mut buf = String::new();
-                    io::stdin().read_to_string(&mut buf)?;
+                    io::stdin()
+                        .read_to_string(&mut buf)
+                        .context("Failed to read input from stdin")?;
                     buf
                 }
             };
@@ -61,74 +65,74 @@ fn main() -> Result<()> {
     }
 }
 
-#[derive(Debug)]
+/// A wrapper around Base that provides string conversion.
+///
+/// This type enables parsing base names from command-line arguments
+/// and displaying them in help text.
+#[derive(Debug, Clone)]
 struct StrBase(Base);
 
-impl fmt::Display for StrBase {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let base_str = match self.0 {
-            Base::Identity => "identity",
-            Base::Base2 => "base2",
-            Base::Base8 => "base8",
-            Base::Base10 => "base10",
-            Base::Base16Lower => "base16",
-            Base::Base16Upper => "base16upper",
-            Base::Base32HexLower => "base32hex",
-            Base::Base32HexUpper => "base32hexupper",
-            Base::Base32HexPadLower => "base32hexpad",
-            Base::Base32HexPadUpper => "base32hexpadupper",
-            Base::Base32Lower => "base32",
-            Base::Base32Upper => "base32upper",
-            Base::Base32PadLower => "base32pad",
-            Base::Base32PadUpper => "base32padupper",
-            Base::Base32Z => "base32z",
-            Base::Base36Lower => "base36lower",
-            Base::Base36Upper => "base36upper",
-            Base::Base58Flickr => "base58flickr",
-            Base::Base58Btc => "base58btc",
-            Base::Base64 => "base64",
-            Base::Base64Pad => "base64pad",
-            Base::Base64Url => "base64url",
-            Base::Base64UrlPad => "base64urlpad",
-            Base::Base256Emoji => "base256emoji",
-        };
-        write!(f, "{}", base_str)
-    }
+/// Generates Display and FromStr implementations for StrBase using a single source of truth.
+///
+/// This macro eliminates code duplication by defining the Base ↔ string mappings once
+/// and generating both trait implementations from that definition.
+macro_rules! impl_base_string_conversion {
+    ( $($variant:ident => $string:literal),* $(,)? ) => {
+        impl fmt::Display for StrBase {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                let base_str = match self.0 {
+                    $( Base::$variant => $string, )*
+                };
+                write!(f, "{}", base_str)
+            }
+        }
+
+        impl FromStr for StrBase {
+            type Err = Error;
+
+            fn from_str(base_str: &str) -> Result<Self, Self::Err> {
+                let base = match base_str {
+                    $( $string => Ok(Base::$variant), )*
+                    _ => {
+                        let available = [ $($string),* ].join(", ");
+                        return Err(anyhow!(
+                            "Unknown base: {:?}\n\nAvailable bases:\n  {}",
+                            base_str,
+                            available
+                        ));
+                    }
+                };
+                base.map(Self)
+            }
+        }
+    };
 }
 
-impl FromStr for StrBase {
-    type Err = Error;
-
-    fn from_str(base_str: &str) -> Result<Self, Self::Err> {
-        let base = match base_str {
-            "identity" => Ok(Base::Identity),
-            "base2" => Ok(Base::Base2),
-            "base8" => Ok(Base::Base8),
-            "base10" => Ok(Base::Base10),
-            "base16" => Ok(Base::Base16Lower),
-            "base16upper" => Ok(Base::Base16Upper),
-            "base32hex" => Ok(Base::Base32HexLower),
-            "base32hexupper" => Ok(Base::Base32HexUpper),
-            "base32hexpad" => Ok(Base::Base32HexPadLower),
-            "base32hexpadupper" => Ok(Base::Base32HexPadUpper),
-            "base32" => Ok(Base::Base32Lower),
-            "base32upper" => Ok(Base::Base32Upper),
-            "base32pad" => Ok(Base::Base32PadLower),
-            "base32padupper" => Ok(Base::Base32PadUpper),
-            "base32z" => Ok(Base::Base32Z),
-            "base36lower" => Ok(Base::Base36Lower),
-            "base36upper" => Ok(Base::Base36Upper),
-            "base58flickr" => Ok(Base::Base58Flickr),
-            "base58btc" => Ok(Base::Base58Btc),
-            "base64" => Ok(Base::Base64),
-            "base64pad" => Ok(Base::Base64Pad),
-            "base64url" => Ok(Base::Base64Url),
-            "base64urlpad" => Ok(Base::Base64UrlPad),
-            "base256emoji" => Ok(Base::Base256Emoji),
-            _ => return Err(anyhow!("Unknown base: {:?}", base_str)),
-        };
-        base.map(Self)
-    }
+impl_base_string_conversion! {
+    Identity => "identity",
+    Base2 => "base2",
+    Base8 => "base8",
+    Base10 => "base10",
+    Base16Lower => "base16",
+    Base16Upper => "base16upper",
+    Base32HexLower => "base32hex",
+    Base32HexUpper => "base32hexupper",
+    Base32HexPadLower => "base32hexpad",
+    Base32HexPadUpper => "base32hexpadupper",
+    Base32Lower => "base32",
+    Base32Upper => "base32upper",
+    Base32PadLower => "base32pad",
+    Base32PadUpper => "base32padupper",
+    Base32Z => "base32z",
+    Base36Lower => "base36lower",
+    Base36Upper => "base36upper",
+    Base58Flickr => "base58flickr",
+    Base58Btc => "base58btc",
+    Base64 => "base64",
+    Base64Pad => "base64pad",
+    Base64Url => "base64url",
+    Base64UrlPad => "base64urlpad",
+    Base256Emoji => "base256emoji",
 }
 
 impl From<StrBase> for Base {
@@ -141,12 +145,21 @@ fn encode(base: StrBase, input: &[u8]) -> Result<()> {
     log::debug!("Encode {:?} with {}", input, base);
     let result = multibase::encode(base.into(), input);
     print!("{}", result);
+    io::stdout()
+        .flush()
+        .context("Failed to write encoded output to stdout")?;
     Ok(())
 }
 
 fn decode(input: &str) -> Result<()> {
     log::debug!("Decode {:?}", input);
-    let (_, result) = multibase::decode(input)?;
-    io::stdout().write_all(&result)?;
+    let (detected_base, result) = multibase::decode(input, true)
+        .context("Failed to decode input. Make sure it starts with a valid multibase prefix")?;
+
+    log::debug!("Detected base: {:?}", detected_base);
+    io::stdout()
+        .write_all(&result)
+        .context("Failed to write decoded output to stdout")?;
+    io::stdout().flush().context("Failed to flush stdout")?;
     Ok(())
 }

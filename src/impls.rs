@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 use crate::encoding;
 use crate::error::Result;
 use base256emoji::{Base, Emoji};
@@ -5,6 +7,55 @@ use base256emoji::{Base, Emoji};
 #[cfg(not(feature = "std"))]
 use alloc::{string::String, vec::Vec};
 
+/// Generates BaseCodec implementations for data-encoding-based encodings.
+///
+/// This macro creates type wrappers and `BaseCodec` trait implementations for
+/// base encodings that use the `data-encoding` crate. It handles both strict
+/// and permissive decoding modes.
+///
+/// # Macro Hygiene
+///
+/// Uses `$crate::` prefixes to ensure proper hygiene when invoked from
+/// different modules or crates.
+///
+/// # Parameters
+///
+/// The macro accepts a comma-separated list of encoding definitions:
+/// ```text
+/// #[doc = "Documentation"] TypeName, ENCODING_CONSTANT, PERMISSIVE_ENCODING;
+/// ```
+///
+/// Where:
+/// - `#[doc = "..."]` - Documentation for the generated type
+/// - `TypeName` - PascalCase name for the struct (e.g., `Base64`, `Base32Lower`)
+/// - `ENCODING_CONSTANT` - Strict encoding spec from `data-encoding` crate
+/// - `PERMISSIVE_ENCODING` - Permissive encoding spec (case-insensitive, etc.)
+///
+/// # Generated Code
+///
+/// For each encoding definition, generates:
+/// 1. A zero-sized struct type
+/// 2. `BaseCodec` implementation with `encode()` and `decode()` methods
+/// 3. Strict/permissive decoding logic based on the `strict` parameter
+///
+/// # Example
+///
+/// ```ignore
+/// derive_base_encoding! {
+///     /// Base64 encoding
+///     Base64, encoding::BASE64_NOPAD, encoding::BASE64_NOPAD_PERMISSIVE;
+/// }
+/// ```
+///
+/// # Strict vs Permissive Mode
+///
+/// - **Strict mode**: Uses the exact encoding specification (case-sensitive)
+/// - **Permissive mode**: Accepts variations like mixed case where applicable
+///
+/// # Error Handling
+///
+/// Decoding errors from `data-encoding` are automatically converted to the
+/// crate's `Error` type via the `?` operator.
 macro_rules! derive_base_encoding {
     ( $(#[$doc:meta] $type:ident, $encoding:expr, $permissive:expr;)* ) => {
         $(
@@ -17,7 +68,7 @@ macro_rules! derive_base_encoding {
                     $encoding.encode(input.as_ref())
                 }
 
-                fn decode<I: AsRef<str>>(input: I, strict: bool) -> Result<Vec<u8>> {
+                fn decode<I: AsRef<str>>(input: I, strict: bool) -> $crate::error::Result<Vec<u8>> {
                     if strict {
                         Ok($encoding.decode(input.as_ref().as_bytes())?)
                     } else {
@@ -29,6 +80,69 @@ macro_rules! derive_base_encoding {
     };
 }
 
+/// Generates BaseCodec implementations for base-x-based encodings.
+///
+/// This macro creates type wrappers and `BaseCodec` trait implementations for
+/// base encodings that use the `base-x` crate (variable-radix encodings like
+/// Base10, Base58, etc.). It handles both strict and permissive decoding modes.
+///
+/// # Macro Hygiene
+///
+/// Uses `$crate::` prefixes to ensure proper hygiene when invoked from
+/// different modules or crates.
+///
+/// # Parameters
+///
+/// The macro accepts a comma-separated list of encoding definitions:
+/// ```text
+/// #[doc = "Documentation"] TypeName, ALPHABET, PERMISSIVE_ALPHABET;
+/// ```
+///
+/// Where:
+/// - `#[doc = "..."]` - Documentation for the generated type
+/// - `TypeName` - PascalCase name for the struct (e.g., `Base58Btc`, `Base10`)
+/// - `ALPHABET` - Strict alphabet string for this encoding
+/// - `PERMISSIVE_ALPHABET` - Permissive alphabet (may be same as strict)
+///
+/// # Generated Code
+///
+/// For each encoding definition, generates:
+/// 1. A zero-sized struct type
+/// 2. `BaseCodec` implementation with `encode()` and `decode()` methods
+/// 3. Strict/permissive decoding logic based on the `strict` parameter
+///
+/// # Example
+///
+/// ```ignore
+/// derive_base_x! {
+///     /// Base58 Bitcoin encoding
+///     Base58Btc, encoding::BASE58_BITCOIN, encoding::BASE58_BITCOIN_PERMISSIVE;
+/// }
+/// ```
+///
+/// # Difference from derive_base_encoding
+///
+/// This macro uses `base_x::encode/decode` instead of `data-encoding`, which
+/// is appropriate for variable-radix encodings where the alphabet defines the base.
+///
+/// **Why Two Separate Macros?**
+///
+/// While `derive_base_encoding` and `derive_base_x` appear similar, they use
+/// different APIs:
+/// - `derive_base_encoding`: Calls methods on `data-encoding` objects
+/// - `derive_base_x`: Calls functions from the `base-x` crate
+///
+/// Keeping them separate maintains clarity and avoids complex conditional logic.
+///
+/// # Strict vs Permissive Mode
+///
+/// - **Strict mode**: Uses the exact alphabet
+/// - **Permissive mode**: May accept variations (though often identical to strict)
+///
+/// # Error Handling
+///
+/// Decoding errors from `base-x` are automatically converted to the
+/// crate's `Error` type via the `?` operator.
 macro_rules! derive_base_x {
     ( $(#[$doc:meta] $type:ident, $encoding:expr, $permissive:expr;)* ) => {
         $(
@@ -41,7 +155,7 @@ macro_rules! derive_base_x {
                     base_x::encode($encoding, input.as_ref())
                 }
 
-                fn decode<I: AsRef<str>>(input: I, strict: bool) -> Result<Vec<u8>> {
+                fn decode<I: AsRef<str>>(input: I, strict: bool) -> $crate::error::Result<Vec<u8>> {
                     if strict {
                         Ok(base_x::decode($encoding, input.as_ref())?)
                     } else {
@@ -62,12 +176,25 @@ pub(crate) trait BaseCodec {
 }
 
 /// Identity, 8-bit binary (encoder and decoder keeps data unmodified).
+///
+/// # Encoding Behavior
+///
+/// When encoding with Identity, the input bytes are interpreted as UTF-8.
+/// Invalid UTF-8 sequences are replaced with the Unicode replacement character (U+FFFD).
+/// This uses [`String::from_utf8_lossy`] to ensure the operation never panics.
+///
+/// # Security Note
+///
+/// If you need to preserve exact binary data, consider using a different base encoding
+/// like Base64 instead of Identity.
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub(crate) struct Identity;
 
 impl BaseCodec for Identity {
     fn encode<I: AsRef<[u8]>>(input: I) -> String {
-        String::from_utf8(input.as_ref().to_vec()).expect("input must be valid UTF-8 bytes")
+        // Use lossy conversion to prevent panics on invalid UTF-8
+        // This is a security improvement - the old code would panic on arbitrary binary data
+        String::from_utf8_lossy(input.as_ref()).into_owned()
     }
 
     fn decode<I: AsRef<str>>(input: I, _strict: bool) -> Result<Vec<u8>> {
@@ -150,7 +277,10 @@ impl BaseCodec for Base36Lower {
         } else {
             // The input is case insensitive, hence lowercase it
             let lowercased = input.as_ref().to_ascii_lowercase();
-            Ok(base_x::decode(encoding::BASE36_LOWER_PERMISSIVE, &lowercased)?)
+            Ok(base_x::decode(
+                encoding::BASE36_LOWER_PERMISSIVE,
+                &lowercased,
+            )?)
         }
     }
 }
@@ -170,7 +300,10 @@ impl BaseCodec for Base36Upper {
         } else {
             // The input is case insensitive, hence uppercase it
             let uppercased = input.as_ref().to_ascii_uppercase();
-            Ok(base_x::decode(encoding::BASE36_UPPER_PERMISSIVE, &uppercased)?)
+            Ok(base_x::decode(
+                encoding::BASE36_UPPER_PERMISSIVE,
+                &uppercased,
+            )?)
         }
     }
 }

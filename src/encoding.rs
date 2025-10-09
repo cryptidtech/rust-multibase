@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 use data_encoding::Encoding;
 use data_encoding_macro::new_encoding;
 

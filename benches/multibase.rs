@@ -3,12 +3,12 @@ use std::hint::black_box;
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use rand::Rng;
 
-use multibase::{decode, decode_into, encode, encode_into, encode_to_validated, Base};
+use multi_base::{decode, decode_into, encode, encode_into, encode_to_validated, Base};
 
 fn bench_encode(c: &mut Criterion) {
-    let mut rng = rand::rng();
-    let data_large: Vec<u8> = (0..1024).map(|_| rng.random()).collect();
-    let data_small: Vec<u8> = (0..32).map(|_| rng.random()).collect();
+    let mut rng = rand::thread_rng();
+    let data_large: Vec<u8> = (0..1024).map(|_| rng.gen()).collect();
+    let data_small: Vec<u8> = (0..32).map(|_| rng.gen()).collect();
 
     let mut group = c.benchmark_group("encode");
 
@@ -50,8 +50,8 @@ fn bench_encode(c: &mut Criterion) {
 }
 
 fn bench_decode(c: &mut Criterion) {
-    let mut rng = rand::rng();
-    let data: Vec<usize> = (0..1024).map(|_| rng.random::<u32>() as usize).collect();
+    let mut rng = rand::thread_rng();
+    let data: Vec<usize> = (0..1024).map(|_| rng.gen::<u32>() as usize).collect();
 
     let base32 = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
     let base58 = b"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
@@ -94,8 +94,8 @@ fn bench_decode(c: &mut Criterion) {
 
 // Benchmark zero-copy encode_into API
 fn bench_encode_into(c: &mut Criterion) {
-    let mut rng = rand::rng();
-    let data: Vec<u8> = (0..1024).map(|_| rng.random()).collect();
+    let mut rng = rand::thread_rng();
+    let data: Vec<u8> = (0..1024).map(|_| rng.gen()).collect();
 
     let mut group = c.benchmark_group("encode_into");
 
@@ -118,8 +118,8 @@ fn bench_encode_into(c: &mut Criterion) {
 
 // Benchmark zero-copy decode_into API
 fn bench_decode_into(c: &mut Criterion) {
-    let mut rng = rand::rng();
-    let data: Vec<u8> = (0..1024).map(|_| rng.random()).collect();
+    let mut rng = rand::thread_rng();
+    let data: Vec<u8> = (0..1024).map(|_| rng.gen()).collect();
 
     let encoded_base16 = encode(Base::Base16Lower, &data);
     let encoded_base32 = encode(Base::Base32Lower, &data);
@@ -156,8 +156,8 @@ fn bench_decode_into(c: &mut Criterion) {
 
 // Benchmark roundtrip operations
 fn bench_roundtrip(c: &mut Criterion) {
-    let mut rng = rand::rng();
-    let data: Vec<u8> = (0..256).map(|_| rng.random()).collect();
+    let mut rng = rand::thread_rng();
+    let data: Vec<u8> = (0..256).map(|_| rng.gen()).collect();
 
     let mut group = c.benchmark_group("roundtrip");
 
@@ -185,13 +185,13 @@ fn bench_roundtrip(c: &mut Criterion) {
 
 // Benchmark various data sizes
 fn bench_data_sizes(c: &mut Criterion) {
-    let mut rng = rand::rng();
+    let mut rng = rand::thread_rng();
     let sizes = vec![0, 1, 16, 64, 256, 1024, 4096];
 
     let mut group = c.benchmark_group("data_sizes");
 
     for size in sizes {
-        let data: Vec<u8> = (0..size).map(|_| rng.random()).collect();
+        let data: Vec<u8> = (0..size).map(|_| rng.gen()).collect();
 
         group.bench_with_input(BenchmarkId::new("base64_encode", size), &data, |b, data| {
             b.iter(|| {
@@ -205,8 +205,8 @@ fn bench_data_sizes(c: &mut Criterion) {
 
 // Benchmark all base types
 fn bench_all_bases(c: &mut Criterion) {
-    let mut rng = rand::rng();
-    let data: Vec<u8> = (0..128).map(|_| rng.random()).collect();
+    let mut rng = rand::thread_rng();
+    let data: Vec<u8> = (0..128).map(|_| rng.gen()).collect();
 
     let bases = vec![
         Base::Base2,
@@ -242,8 +242,8 @@ fn bench_all_bases(c: &mut Criterion) {
 
 // Benchmark EncodedString operations
 fn bench_encoded_string(c: &mut Criterion) {
-    let mut rng = rand::rng();
-    let data: Vec<u8> = (0..256).map(|_| rng.random()).collect();
+    let mut rng = rand::thread_rng();
+    let data: Vec<u8> = (0..256).map(|_| rng.gen()).collect();
 
     let mut group = c.benchmark_group("encoded_string");
 
@@ -258,7 +258,7 @@ fn bench_encoded_string(c: &mut Criterion) {
     let encoded_str = encode(Base::Base64, &data);
     group.bench_function("parse", |b| {
         b.iter(|| {
-            let _ = black_box(multibase::parse_encoded(black_box(&encoded_str)).unwrap());
+            let _ = black_box(multi_base::parse_encoded(black_box(&encoded_str)).unwrap());
         })
     });
 
@@ -296,8 +296,8 @@ fn bench_base_from_code(c: &mut Criterion) {
 
 // Benchmark comparison: encode vs encode_into
 fn bench_encode_comparison(c: &mut Criterion) {
-    let mut rng = rand::rng();
-    let data: Vec<u8> = (0..1024).map(|_| rng.random()).collect();
+    let mut rng = rand::thread_rng();
+    let data: Vec<u8> = (0..1024).map(|_| rng.gen()).collect();
 
     let mut group = c.benchmark_group("encode_comparison");
 

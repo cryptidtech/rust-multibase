@@ -1,4 +1,4 @@
-use multibase::{decode, decode_into, encode, Base, Base::*};
+use multi_base::{decode, decode_into, encode, Base, Base::*};
 
 fn encode_decode_assert(input: &[u8], test_cases: Vec<(Base, &str)>) {
     for (base, output) in test_cases {
@@ -200,7 +200,7 @@ fn identity_roundtrip_valid_utf8() {
 /// Test that decoding an empty string returns EmptyInput error.
 #[test]
 fn decode_empty_string_error() {
-    use multibase::Error;
+    use multi_base::Error;
 
     let result = decode("", true);
     assert!(result.is_err());
@@ -214,7 +214,7 @@ fn decode_empty_string_error() {
 /// Test that unknown base codes return UnknownBase error.
 #[test]
 fn decode_unknown_base_error() {
-    use multibase::Error;
+    use multi_base::Error;
 
     let test_cases = vec![
         "xInvalidBase", // 'x' is not a valid base code
@@ -242,7 +242,7 @@ fn decode_unknown_base_error() {
 /// Test that Base::from_code returns proper error for invalid codes.
 #[test]
 fn base_from_code_error() {
-    use multibase::Error;
+    use multi_base::Error;
 
     let invalid_codes = vec!['x', '!', '@', '#', '$', '%'];
 
@@ -292,7 +292,7 @@ fn decode_malformed_data_errors() {
 /// Test that error types implement expected traits.
 #[test]
 fn error_traits() {
-    use multibase::Error;
+    use multi_base::Error;
 
     let error = Error::EmptyInput;
 
@@ -360,7 +360,7 @@ fn identity_binary_data_lossy() {
 /// Test encode_into with buffer reuse.
 #[test]
 fn test_encode_into_buffer_reuse() {
-    use multibase::encode_into;
+    use multi_base::encode_into;
 
     let mut buffer = String::new();
 
@@ -380,7 +380,7 @@ fn test_encode_into_buffer_reuse() {
 /// Test encode_into with all base types.
 #[test]
 fn test_encode_into_all_bases() {
-    use multibase::encode_into;
+    use multi_base::encode_into;
 
     let input = b"test data";
     let mut buffer = String::new();
@@ -410,7 +410,7 @@ fn test_encode_into_all_bases() {
 /// Test decode_into with buffer reuse.
 #[test]
 fn test_decode_into_buffer_reuse() {
-    use multibase::decode_into;
+    use multi_base::decode_into;
 
     let mut buffer = Vec::new();
 
@@ -433,7 +433,7 @@ fn test_decode_into_buffer_reuse() {
 /// Test that encode_into produces same results as encode.
 #[test]
 fn test_encode_into_matches_encode() {
-    use multibase::encode_into;
+    use multi_base::encode_into;
 
     let test_data = vec![
         b"".as_slice(),
@@ -498,7 +498,7 @@ fn test_decode_into_matches_decode() {
 /// Test decode_into error handling.
 #[test]
 fn test_decode_into_errors() {
-    use multibase::{decode_into, Error};
+    use multi_base::{decode_into, Error};
 
     let mut buffer = Vec::new();
 
@@ -516,7 +516,7 @@ fn test_decode_into_errors() {
 /// Test encode_into with empty input.
 #[test]
 fn test_encode_into_empty() {
-    use multibase::encode_into;
+    use multi_base::encode_into;
 
     let mut buffer = String::new();
     encode_into(Base64, b"", &mut buffer);
@@ -526,7 +526,7 @@ fn test_encode_into_empty() {
 /// Test decode_into with empty data (just code).
 #[test]
 fn test_decode_into_empty_data() {
-    use multibase::decode_into;
+    use multi_base::decode_into;
 
     let mut buffer = Vec::new();
     let base = decode_into("m", true, &mut buffer).unwrap();
@@ -537,7 +537,7 @@ fn test_decode_into_empty_data() {
 /// Test encode_into doesn't grow buffer unnecessarily.
 #[test]
 fn test_encode_into_buffer_capacity() {
-    use multibase::encode_into;
+    use multi_base::encode_into;
 
     let mut buffer = String::with_capacity(1000);
     let initial_capacity = buffer.capacity();
@@ -552,7 +552,7 @@ fn test_encode_into_buffer_capacity() {
 /// Test decode_into buffer reuse in loop (performance test).
 #[test]
 fn test_decode_into_loop_performance() {
-    use multibase::decode_into;
+    use multi_base::decode_into;
 
     let inputs = vec!["zCn8eVZg", "md29ybGQ", "f72757374", "BPFSXGIDNMFXGSIBB"];
 
@@ -572,7 +572,7 @@ fn test_decode_into_loop_performance() {
 /// Test EncodedString basic usage.
 #[test]
 fn test_encoded_string_basic() {
-    use multibase::EncodedString;
+    use multi_base::EncodedString;
 
     let encoded = EncodedString::new("zCn8eVZg").unwrap();
     assert_eq!(encoded.base(), Base58Btc);
@@ -585,7 +585,7 @@ fn test_encoded_string_basic() {
 /// Test EncodedString FromStr implementation.
 #[test]
 fn test_encoded_string_from_str() {
-    use multibase::EncodedString;
+    use multi_base::EncodedString;
     use std::str::FromStr;
 
     let encoded = EncodedString::from_str("md29ybGQ").unwrap();
@@ -598,7 +598,7 @@ fn test_encoded_string_from_str() {
 /// Test EncodedString TryFrom implementations.
 #[test]
 fn test_encoded_string_try_from() {
-    use multibase::EncodedString;
+    use multi_base::EncodedString;
     use std::convert::TryFrom;
 
     // From String
@@ -613,7 +613,7 @@ fn test_encoded_string_try_from() {
 /// Test EncodedString error handling.
 #[test]
 fn test_encoded_string_errors() {
-    use multibase::{EncodedString, Error};
+    use multi_base::{EncodedString, Error};
 
     // Empty string
     let result = EncodedString::new("");
@@ -629,7 +629,7 @@ fn test_encoded_string_errors() {
 /// Test EncodedString validation only checks prefix.
 #[test]
 fn test_encoded_string_validates_prefix_only() {
-    use multibase::EncodedString;
+    use multi_base::EncodedString;
 
     // This has a valid base code but invalid data
     // Construction should succeed, but decode should fail
@@ -644,7 +644,7 @@ fn test_encoded_string_validates_prefix_only() {
 /// Test encode_to_validated convenience function.
 #[test]
 fn test_encode_to_validated() {
-    use multibase::encode_to_validated;
+    use multi_base::encode_to_validated;
 
     let encoded = encode_to_validated(Base58Btc, b"hello");
     assert_eq!(encoded.base(), Base58Btc);
@@ -657,7 +657,7 @@ fn test_encode_to_validated() {
 /// Test parse_encoded convenience function.
 #[test]
 fn test_parse_encoded() {
-    use multibase::parse_encoded;
+    use multi_base::parse_encoded;
 
     let encoded = parse_encoded("zCn8eVZg").unwrap();
     assert_eq!(encoded.base(), Base58Btc);
@@ -669,7 +669,7 @@ fn test_parse_encoded() {
 /// Test EncodedString with all base types.
 #[test]
 fn test_encoded_string_all_bases() {
-    use multibase::{encode_to_validated, EncodedString};
+    use multi_base::{encode_to_validated, EncodedString};
 
     let data = b"test";
     let bases = vec![Base16Lower, Base32Lower, Base58Btc, Base64];
@@ -692,7 +692,7 @@ fn test_encoded_string_all_bases() {
 /// Test EncodedString Display trait.
 #[test]
 fn test_encoded_string_display() {
-    use multibase::EncodedString;
+    use multi_base::EncodedString;
 
     let encoded = EncodedString::new("zCn8eVZg").unwrap();
     assert_eq!(format!("{}", encoded), "zCn8eVZg");
@@ -701,7 +701,7 @@ fn test_encoded_string_display() {
 /// Test EncodedString into_inner.
 #[test]
 fn test_encoded_string_into_inner() {
-    use multibase::EncodedString;
+    use multi_base::EncodedString;
 
     let encoded = EncodedString::new("zCn8eVZg").unwrap();
     let inner = encoded.into_inner();
@@ -711,7 +711,7 @@ fn test_encoded_string_into_inner() {
 /// Test EncodedString clone and equality.
 #[test]
 fn test_encoded_string_clone_eq() {
-    use multibase::EncodedString;
+    use multi_base::EncodedString;
 
     let encoded1 = EncodedString::new("zCn8eVZg").unwrap();
     let encoded2 = encoded1.clone();
@@ -724,7 +724,7 @@ fn test_encoded_string_clone_eq() {
 /// Test EncodedString decode_with_strictness.
 #[test]
 fn test_encoded_string_strictness() {
-    use multibase::EncodedString;
+    use multi_base::EncodedString;
 
     // Mixed case Base16Upper (should work in permissive mode)
     let encoded = EncodedString::new("FaB").unwrap();
@@ -1054,7 +1054,7 @@ fn test_strict_vs_permissive_mode() {
 /// Test error messages contain useful information.
 #[test]
 fn test_error_messages_are_descriptive() {
-    use multibase::Error;
+    use multi_base::Error;
 
     // UnknownBase error should contain the invalid code
     let result = decode("xInvalid", true);
@@ -1083,7 +1083,7 @@ fn test_error_messages_are_descriptive() {
 /// Test that all error types are properly constructed.
 #[test]
 fn test_all_error_variants() {
-    use multibase::Error;
+    use multi_base::Error;
 
     // EmptyInput
     let err = Error::EmptyInput;
@@ -1209,7 +1209,7 @@ fn test_concurrent_decoding() {
 /// Test concurrent encoding with buffer reuse (encode_into).
 #[test]
 fn test_concurrent_encode_into() {
-    use multibase::encode_into;
+    use multi_base::encode_into;
     use std::thread;
 
     let test_data = vec![
@@ -1242,7 +1242,7 @@ fn test_concurrent_encode_into() {
 /// Test concurrent decoding with buffer reuse (decode_into).
 #[test]
 fn test_concurrent_decode_into() {
-    use multibase::decode_into;
+    use multi_base::decode_into;
     use std::thread;
 
     let test_cases = vec![
@@ -1308,7 +1308,7 @@ fn test_many_concurrent_operations() {
 /// Test that EncodedString is Send and Sync.
 #[test]
 fn test_encoded_string_is_send_sync() {
-    use multibase::EncodedString;
+    use multi_base::EncodedString;
     use std::thread;
 
     let encoded = EncodedString::new("zCn8eVZg").unwrap();
@@ -1325,7 +1325,7 @@ fn test_encoded_string_is_send_sync() {
 /// Test that EncodedString can be shared across threads via Arc.
 #[test]
 fn test_encoded_string_shared_across_threads() {
-    use multibase::EncodedString;
+    use multi_base::EncodedString;
     use std::sync::Arc;
     use std::thread;
 

@@ -1,14 +1,14 @@
 [package]
-name = "multibase"
+name = "multi-base"
 version = "1.0.0"
 authors = ["Friedel Ziegelmayer <dignifiedquire@gmail.com>", "Dave Grantham <dwg@linuxprogrammer.org>"]
 edition = "2021"
 license = "MIT"
 readme = "README.md"
 description = "multibase in rust"
-homepage = "https://github.com/multiformats/rust-multibase"
-repository = "https://github.com/multiformats/rust-multibase"
+repository = "https://github.com/cryptidtech/multi-base.git"
 keywords = ["ipld", "ipfs", "multihash", "cid", "no_std"]
+categories = ["encoding"]
 
 [features]
 default = ["std"]
@@ -16,20 +16,16 @@ std = ["data-encoding/std"]
 
 [dependencies]
 base-x = { version = "0.2.7", default-features = false }
-base256emoji = "1.0.2"
 data-encoding = { version = "2.3.1", default-features = false, features = ["alloc"] }
 data-encoding-macro = "0.1.9"
 thiserror = { version = "2.0", default-features = false }
 
 [dev-dependencies]
-criterion = "0.7"
-rand = "0.9"
+criterion = { version = "0.8", features = ["html_reports"] }
 proptest = "1.4"
+rand = "0.8"
 
 [[bench]]
 name = "multibase"
 harness = false
-
-[workspace]
-members = ["cli"]
-exclude = ["fuzz"]
+path = "benches/multibase.rs"

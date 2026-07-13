@@ -28,7 +28,7 @@ pub use self::error::{Error, Result};
 /// # Examples
 ///
 /// ```
-/// use multibase::{Base, decode};
+/// use multi_base::{Base, decode};
 ///
 /// assert_eq!(
 ///     decode("zCn8eVZg", true).unwrap(),
@@ -48,7 +48,7 @@ pub fn decode<T: AsRef<str>>(input: T, strict: bool) -> Result<(Base, Vec<u8>)> 
 /// # Examples
 ///
 /// ```
-/// use multibase::{Base, encode};
+/// use multi_base::{Base, encode};
 ///
 /// assert_eq!(encode(Base::Base58Btc, b"hello"), "zCn8eVZg");
 /// ```
@@ -82,7 +82,7 @@ pub fn encode<T: AsRef<[u8]>>(base: Base, input: T) -> String {
 /// # Examples
 ///
 /// ```
-/// use multibase::{Base, encode_into};
+/// use multi_base::{Base, encode_into};
 ///
 /// let mut buffer = String::new();
 ///
@@ -122,7 +122,7 @@ pub fn encode_into<T: AsRef<[u8]>>(base: Base, input: T, buffer: &mut String) {
 /// # Examples
 ///
 /// ```
-/// use multibase::{Base, decode_into};
+/// use multi_base::{Base, decode_into};
 ///
 /// let mut buffer = Vec::new();
 ///
@@ -152,11 +152,7 @@ pub fn decode_into<T: AsRef<str>>(input: T, strict: bool, buffer: &mut Vec<u8>) 
     let input = input.as_ref();
     let code = input.chars().next().ok_or(Error::EmptyInput)?;
     let base = Base::from_code(code)?;
-    let decoded = base.decode(&input[code.len_utf8()..], strict)?;
-
-    // Clear and fill buffer with decoded data
-    buffer.clear();
-    buffer.extend_from_slice(&decoded);
+    base.decode_into(&input[code.len_utf8()..], strict, buffer)?;
     Ok(base)
 }
 
@@ -168,7 +164,7 @@ pub fn decode_into<T: AsRef<str>>(input: T, strict: bool, buffer: &mut Vec<u8>) 
 /// # Examples
 ///
 /// ```
-/// use multibase::{Base, encode_to_validated};
+/// use multi_base::{Base, encode_to_validated};
 ///
 /// let encoded = encode_to_validated(Base::Base58Btc, b"hello");
 /// assert_eq!(encoded.base(), Base::Base58Btc);
@@ -198,7 +194,7 @@ pub fn encode_to_validated<T: AsRef<[u8]>>(base: Base, input: T) -> EncodedStrin
 /// # Examples
 ///
 /// ```
-/// use multibase::{Base, parse_encoded};
+/// use multi_base::{Base, parse_encoded};
 ///
 /// let encoded = parse_encoded("zCn8eVZg").unwrap();
 /// assert_eq!(encoded.base(), Base::Base58Btc);

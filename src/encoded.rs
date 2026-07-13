@@ -15,7 +15,7 @@
 //! # Examples
 //!
 //! ```
-//! use multibase::{EncodedString, Base};
+//! use multi_base::{EncodedString, Base};
 //!
 //! // Parse and validate a multibase string
 //! let encoded = EncodedString::new("zCn8eVZg").unwrap();
@@ -45,7 +45,7 @@ use crate::{Base, Error, Result};
 /// Use [`EncodedString::new`] or parse from a string using [`core::str::FromStr`]:
 ///
 /// ```
-/// use multibase::EncodedString;
+/// use multi_base::EncodedString;
 /// use std::str::FromStr;
 ///
 /// // Using new()
@@ -82,7 +82,7 @@ impl EncodedString {
     /// # Examples
     ///
     /// ```
-    /// use multibase::{EncodedString, Base};
+    /// use multi_base::{EncodedString, Base};
     ///
     /// // Valid multibase string
     /// let encoded = EncodedString::new("zCn8eVZg").unwrap();
@@ -115,7 +115,7 @@ impl EncodedString {
     /// # Examples
     ///
     /// ```
-    /// use multibase::{EncodedString, Base};
+    /// use multi_base::{EncodedString, Base};
     ///
     /// let encoded = EncodedString::new("zCn8eVZg").unwrap();
     /// assert_eq!(encoded.base(), Base::Base58Btc);
@@ -132,7 +132,7 @@ impl EncodedString {
     /// # Examples
     ///
     /// ```
-    /// use multibase::EncodedString;
+    /// use multi_base::EncodedString;
     ///
     /// let encoded = EncodedString::new("zCn8eVZg").unwrap();
     /// assert_eq!(encoded.as_str(), "zCn8eVZg");
@@ -150,7 +150,7 @@ impl EncodedString {
     /// # Examples
     ///
     /// ```
-    /// use multibase::EncodedString;
+    /// use multi_base::EncodedString;
     ///
     /// let encoded = EncodedString::new("zCn8eVZg").unwrap();
     /// let decoded = encoded.decode().unwrap();
@@ -173,7 +173,7 @@ impl EncodedString {
     /// # Examples
     ///
     /// ```
-    /// use multibase::EncodedString;
+    /// use multi_base::EncodedString;
     ///
     /// // Case-insensitive decoding for some bases
     /// let encoded = EncodedString::new("FaB").unwrap(); // Base16Upper with mixed case
@@ -194,7 +194,7 @@ impl EncodedString {
     /// # Examples
     ///
     /// ```
-    /// use multibase::EncodedString;
+    /// use multi_base::EncodedString;
     ///
     /// let encoded = EncodedString::new("zCn8eVZg").unwrap();
     /// let inner = encoded.into_inner();

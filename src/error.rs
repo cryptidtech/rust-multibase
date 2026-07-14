@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 #[cfg(not(feature = "std"))]
-use alloc::{format, string::String};
+use alloc::format;
 
 /// Type alias to use this library's [`Error`] type in a `Result`.
 pub type Result<T> = core::result::Result<T, Error>;
@@ -56,6 +56,7 @@ pub enum Error {
         /// The error message from data-encoding.
         #[cfg(feature = "std")]
         message: std::string::String,
+        /// The error message from data-encoding (no_std).
         #[cfg(not(feature = "std"))]
         message: alloc::string::String,
     },
@@ -109,12 +110,6 @@ impl Clone for Error {
 impl From<base_x::DecodeError> for Error {
     fn from(_: base_x::DecodeError) -> Self {
         Error::BaseXDecode
-    }
-}
-
-impl From<base256emoji::DecodeError> for Error {
-    fn from(_: base256emoji::DecodeError) -> Self {
-        Error::Base256EmojiDecode
     }
 }
 

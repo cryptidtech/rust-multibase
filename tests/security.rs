@@ -5,7 +5,7 @@
 //! These tests verify that the library handles potentially malicious or
 //! adversarial inputs safely without panicking or exhibiting undefined behavior.
 
-use multibase::{decode, decode_into, encode, encode_into, Base};
+use multi_base::{decode, decode_into, encode, encode_into, Base};
 
 /// Tests that very large inputs don't cause panics or undefined behavior.
 #[test]
@@ -288,7 +288,7 @@ fn test_all_error_paths() {
 /// Tests that EncodedString validation is secure.
 #[test]
 fn test_encoded_string_security() {
-    use multibase::EncodedString;
+    use multi_base::EncodedString;
 
     // Valid string
     let valid = EncodedString::new("zCn8eVZg").unwrap();

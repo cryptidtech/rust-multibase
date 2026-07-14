@@ -6,7 +6,7 @@
 //! public types are properly Send and Sync, and that concurrent operations
 //! are safe and correct.
 
-use multibase::{Base, EncodedString, Error};
+use multi_base::{Base, EncodedString, Error};
 
 /// Compile-time assertion that a type implements Send.
 fn assert_send<T: Send>() {}
@@ -173,7 +173,7 @@ fn concurrent_encoding_correctness() {
     for _ in 0..10 {
         let data = Arc::clone(&test_data);
         let handle = thread::spawn(move || {
-            let encoded = multibase::encode(Base::Base64, &*data);
+            let encoded = multi_base::encode(Base::Base64, &*data);
             assert!(encoded.starts_with('m'));
             encoded
         });
@@ -200,7 +200,7 @@ fn concurrent_decoding_correctness() {
     for _ in 0..10 {
         let enc = Arc::clone(&encoded);
         let handle = thread::spawn(move || {
-            let (base, decoded) = multibase::decode(&*enc, true).unwrap();
+            let (base, decoded) = multi_base::decode(&*enc, true).unwrap();
             assert_eq!(base, Base::Base58Btc);
             decoded
         });
@@ -252,7 +252,7 @@ fn concurrent_encode_into_thread_local_buffers() {
             // Each thread has its own buffer
             let mut buffer = String::new();
             for _ in 0..100 {
-                multibase::encode_into(Base::Base64, &*data, &mut buffer);
+                multi_base::encode_into(Base::Base64, &*data, &mut buffer);
                 assert!(buffer.starts_with('m'));
             }
             i
@@ -280,7 +280,7 @@ fn concurrent_decode_into_thread_local_buffers() {
             // Each thread has its own buffer
             let mut buffer = Vec::new();
             for _ in 0..100 {
-                let base = multibase::decode_into(&*enc, true, &mut buffer).unwrap();
+                let base = multi_base::decode_into(&*enc, true, &mut buffer).unwrap();
                 assert_eq!(base, Base::Base64);
                 assert_eq!(buffer, b"world");
             }
@@ -315,8 +315,8 @@ fn concurrent_multi_base_operations() {
     for base in bases {
         let handle = thread::spawn(move || {
             let data = b"concurrent test data";
-            let encoded = multibase::encode(base, data);
-            let (decoded_base, decoded) = multibase::decode(&encoded, true).unwrap();
+            let encoded = multi_base::encode(base, data);
+            let (decoded_base, decoded) = multi_base::decode(&encoded, true).unwrap();
             assert_eq!(decoded_base, base);
             assert_eq!(&decoded[..], data);
         });
@@ -398,7 +398,7 @@ fn concurrent_error_handling() {
 
     for input in invalid_inputs {
         let handle = thread::spawn(move || {
-            let result = multibase::decode(input, true);
+            let result = multi_base::decode(input, true);
             assert!(result.is_err());
         });
         handles.push(handle);
@@ -425,8 +425,8 @@ fn stress_test_concurrent_operations() {
         let handle = thread::spawn(move || {
             for i in 0..100 {
                 let data = format!("data{}", i);
-                let encoded = multibase::encode(Base::Base64, data.as_bytes());
-                let (base, decoded) = multibase::decode(&encoded, true).unwrap();
+                let encoded = multi_base::encode(Base::Base64, data.as_bytes());
+                let (base, decoded) = multi_base::decode(&encoded, true).unwrap();
                 assert_eq!(base, Base::Base64);
                 assert_eq!(decoded, data.as_bytes());
                 c.fetch_add(1, Ordering::SeqCst);

@@ -3,7 +3,7 @@
 // These tests verify invariants that should hold for all inputs,
 // using randomly generated test data.
 
-use multibase::{decode, decode_into, encode, encode_into, Base};
+use multi_base::{decode, decode_into, encode, encode_into, Base};
 use proptest::prelude::*;
 
 // Configure proptest to run fewer cases for faster tests
@@ -211,7 +211,7 @@ proptest! {
     /// Property: EncodedString validation and decoding consistency
     #[test]
     fn prop_encoded_string_consistency(data: Vec<u8>, base_idx: usize) {
-        use multibase::{encode_to_validated, parse_encoded};
+        use multi_base::{encode_to_validated, parse_encoded};
 
         let bases = all_bases();
         if bases.is_empty() {

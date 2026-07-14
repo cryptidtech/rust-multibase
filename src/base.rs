@@ -118,6 +118,12 @@ macro_rules! build_base_enum {
                     $( Self::$base => $crate::impls::$base::decode(input, strict), )*
                 }
             }
+
+            pub(crate) fn decode_into<I: AsRef<str>>(&self, input: I, strict: bool, buffer: &mut Vec<u8>) -> $crate::error::Result<()> {
+                match self {
+                    $( Self::$base => $crate::impls::$base::decode_into(input, strict, buffer), )*
+                }
+            }
         }
     }
 }

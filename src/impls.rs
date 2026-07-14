@@ -2,10 +2,10 @@
 
 use crate::encoding;
 use crate::error::Result;
-use base256emoji::{Base, Emoji};
-
 #[cfg(not(feature = "std"))]
 use alloc::{string::String, vec::Vec};
+#[cfg(feature = "std")]
+use std::{collections::HashMap, sync::OnceLock};
 
 /// Generates BaseCodec implementations for data-encoding-based encodings.
 ///
@@ -173,6 +173,14 @@ pub(crate) trait BaseCodec {
 
     /// Decode with the given string.
     fn decode<I: AsRef<str>>(input: I, strict: bool) -> Result<Vec<u8>>;
+
+    /// Decode into an existing buffer.
+    fn decode_into<I: AsRef<str>>(input: I, strict: bool, buffer: &mut Vec<u8>) -> Result<()> {
+        let decoded = Self::decode(input, strict)?;
+        buffer.clear();
+        buffer.extend_from_slice(&decoded);
+        Ok(())
+    }
 }
 
 /// Identity, 8-bit binary (encoder and decoder keeps data unmodified).
@@ -200,19 +208,126 @@ impl BaseCodec for Identity {
     fn decode<I: AsRef<str>>(input: I, _strict: bool) -> Result<Vec<u8>> {
         Ok(input.as_ref().as_bytes().to_vec())
     }
+
+    fn decode_into<I: AsRef<str>>(input: I, _strict: bool, buffer: &mut Vec<u8>) -> Result<()> {
+        buffer.clear();
+        buffer.extend_from_slice(input.as_ref().as_bytes());
+        Ok(())
+    }
 }
 
 /// Base256Emoji (alphabet: 🚀🪐☄🛰🌌🌑🌒🌓🌔🌕🌖🌗🌘🌍🌏🌎🐉☀💻🖥💾💿😂❤😍🤣😊🙏💕😭😘👍😅👏😁🔥🥰💔💖💙😢🤔😆🙄💪😉☺👌🤗💜😔😎😇🌹🤦🎉💞✌✨🤷😱😌🌸🙌😋💗💚😏💛🙂💓🤩😄😀🖤😃💯🙈👇🎶😒🤭❣😜💋👀😪😑💥🙋😞😩😡🤪👊🥳😥🤤👉💃😳✋😚😝😴🌟😬🙃🍀🌷😻😓⭐✅🥺🌈😈🤘💦✔😣🏃💐☹🎊💘😠☝😕🌺🎂🌻😐🖕💝🙊😹🗣💫💀👑🎵🤞😛🔴😤🌼😫⚽🤙☕🏆🤫👈😮🙆🍻🍃🐶💁😲🌿🧡🎁⚡🌞🎈❌✊👋😰🤨😶🤝🚶💰🍓💢🤟🙁🚨💨🤬✈🎀🍺🤓😙💟🌱😖👶🥴▶➡❓💎💸⬇😨🌚🦋😷🕺⚠🙅😟😵👎🤲🤠🤧📌🔵💅🧐🐾🍒😗🤑🌊🤯🐷☎💧😯💆👆🎤🙇🍑❄🌴💣🐸💌📍🥀🤢👅💡💩👐📸👻🤐🤮🎼🥵🚩🍎🍊👼💍📣🥂)
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub(crate) struct Base256Emoji;
 
+const EMOJI_ALPHABET: &str = "🚀🪐☄🛰🌌🌑🌒🌓🌔🌕🌖🌗🌘🌍🌏🌎🐉☀💻🖥💾💿😂❤😍🤣😊🙏💕😭😘👍😅👏😁🔥🥰💔💖💙😢🤔😆🙄💪😉☺👌🤗💜😔😎😇🌹🤦🎉💞✌✨🤷😱😌🌸🙌😋💗💚😏💛🙂💓🤩😄😀🖤😃💯🙈👇🎶😒🤭❣😜💋👀😪😑💥🙋😞😩😡🤪👊🥳😥🤤👉💃😳✋😚😝😴🌟😬🙃🍀🌷😻😓⭐✅🥺🌈😈🤘💦✔😣🏃💐☹🎊💘😠☝😕🌺🎂🌻😐🖕💝🙊😹🗣💫💀👑🎵🤞😛🔴😤🌼😫⚽🤙☕🏆🤫👈😮🙆🍻🍃🐶💁😲🌿🧡🎁⚡🌞🎈❌✊👋😰🤨😶🤝🚶💰🍓💢🤟🙁🚨💨🤬✈🎀🍺🤓😙💟🌱😖👶🥴▶➡❓💎💸⬇😨🌚🦋😷🕺⚠🙅😟😵👎🤲🤠🤧📌🔵💅🧐🐾🍒😗🤑🌊🤯🐷☎💧😯💆👆🎤🙇🍑❄🌴💣🐸💌📍🥀🤢👅💡💩👐📸👻🤐🤮🎼🥵🚩🍎🍊👼💍📣🥂";
+
+#[cfg(feature = "std")]
+fn emoji_chars() -> &'static [char] {
+    static CHARS: OnceLock<Vec<char>> = OnceLock::new();
+    CHARS
+        .get_or_init(|| EMOJI_ALPHABET.chars().collect())
+        .as_slice()
+}
+
+#[cfg(feature = "std")]
+fn emoji_decode_map() -> &'static HashMap<char, u8> {
+    static MAP: OnceLock<HashMap<char, u8>> = OnceLock::new();
+    MAP.get_or_init(|| {
+        EMOJI_ALPHABET
+            .chars()
+            .enumerate()
+            .map(|(index, c)| (c, index as u8))
+            .collect()
+    })
+}
+
 impl BaseCodec for Base256Emoji {
     fn encode<I: AsRef<[u8]>>(input: I) -> String {
-        Emoji::encode(input.as_ref())
+        #[cfg(feature = "std")]
+        {
+            let chars = emoji_chars();
+            input.as_ref().iter().map(|&b| chars[b as usize]).collect()
+        }
+
+        #[cfg(not(feature = "std"))]
+        {
+            let chars: Vec<char> = EMOJI_ALPHABET.chars().collect();
+            input.as_ref().iter().map(|&b| chars[b as usize]).collect()
+        }
     }
 
     fn decode<I: AsRef<str>>(input: I, _strict: bool) -> Result<Vec<u8>> {
-        Emoji::decode(input.as_ref()).map_err(|e| e.into())
+        #[cfg(feature = "std")]
+        {
+            let map = emoji_decode_map();
+            input
+                .as_ref()
+                .chars()
+                .map(|c| {
+                    map.get(&c)
+                        .copied()
+                        .ok_or(crate::error::Error::Base256EmojiDecode)
+                })
+                .collect()
+        }
+
+        #[cfg(not(feature = "std"))]
+        {
+            input
+                .as_ref()
+                .chars()
+                .map(|c| {
+                    EMOJI_ALPHABET
+                        .chars()
+                        .position(|a| a == c)
+                        .map(|i| i as u8)
+                        .ok_or(crate::error::Error::Base256EmojiDecode)
+                })
+                .collect()
+        }
+    }
+
+    fn decode_into<I: AsRef<str>>(input: I, _strict: bool, buffer: &mut Vec<u8>) -> Result<()> {
+        #[cfg(feature = "std")]
+        {
+            let map = emoji_decode_map();
+            let input = input.as_ref();
+            let len = input.chars().count();
+            for c in input.chars() {
+                if !map.contains_key(&c) {
+                    return Err(crate::error::Error::Base256EmojiDecode);
+                }
+            }
+
+            buffer.clear();
+            buffer.reserve(len);
+            buffer.extend(input.chars().map(|c| map[&c]));
+            Ok(())
+        }
+
+        #[cfg(not(feature = "std"))]
+        {
+            let input = input.as_ref();
+            let len = input.chars().count();
+            for c in input.chars() {
+                if !EMOJI_ALPHABET.chars().any(|a| a == c) {
+                    return Err(crate::error::Error::Base256EmojiDecode);
+                }
+            }
+
+            buffer.clear();
+            buffer.reserve(len);
+            for c in input.chars() {
+                let byte = EMOJI_ALPHABET
+                    .chars()
+                    .position(|a| a == c)
+                    .map(|i| i as u8)
+                    .expect("emoji was already validated");
+                buffer.push(byte);
+            }
+            Ok(())
+        }
     }
 }
 

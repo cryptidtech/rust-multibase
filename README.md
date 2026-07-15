@@ -1,20 +1,21 @@
-# rust-multibase
+# multi-base
 
 [![](https://img.shields.io/badge/made%20by-Protocol%20Labs-blue.svg?style=flat-square)](http://ipn.io)
 [![](https://img.shields.io/badge/project-multiformats-blue.svg?style=flat-square)](https://github.com/multiformats/multiformats)
 [![](https://img.shields.io/badge/freenode-%23ipfs-blue.svg?style=flat-square)](https://webchat.freenode.net/?channels=%23ipfs)
 [![](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
 
-[![Build Status](https://github.com/multiformats/rust-multibase/workflows/build/badge.svg)](https://github.com/multiformats/rust-multibase/actions)
-[![License](https://img.shields.io/crates/l/multibase?style=flat-square)](LICENSE)
-[![Crates.io](https://img.shields.io/crates/v/multibase?style=flat-square)](https://crates.io/crates/multibase)
-[![Documentation](https://docs.rs/multibase/badge.svg?style=flat-square)](https://docs.rs/multibase)
-[![Dependency Status](https://deps.rs/repo/github/multiformats/rust-multibase/status.svg)](https://deps.rs/repo/github/multiformats/rust-multibase)
-[![Coverage Status](https://img.shields.io/codecov/c/github/multiformats/rust-multibase?style=flat-square)](https://codecov.io/gh/multiformats/rust-multibase)
+[![Build Status](https://github.com/cryptidtech/multi-base/workflows/build/badge.svg)](https://github.com/cryptidtech/multi-base/actions)
+[![License](https://img.shields.io/crates/l/multi-base?style=flat-square)](LICENSE)
+[![Crates.io](https://img.shields.io/crates/v/multi-base?style=flat-square)](https://crates.io/crates/multi-base)
+[![Documentation](https://docs.rs/multi-base/badge.svg?style=flat-square)](https://docs.rs/multi-base)
+[![Dependency Status](https://deps.rs/repo/github/cryptidtech/multi-base/status.svg)](https://deps.rs/repo/github/cryptidtech/multi-base)
+[![Coverage Status](https://img.shields.io/codecov/c/github/cryptidtech/multi-base?style=flat-square)](https://codecov.io/gh/cryptidtech/multi-base)
 
 > [multibase](https://github.com/multiformats/multibase) implementation in Rust.
 
-A production-ready, high-performance, well-tested multibase encoding/decoding library with comprehensive error handling, type safety, and security features.
+A multibase encoding/decoding library with error handling, type safety, and
+`no_std` support.
 
 ## Table of Contents
 
@@ -37,16 +38,16 @@ A production-ready, high-performance, well-tested multibase encoding/decoding li
 
 ## Features
 
-✨ **Production Ready**
+✨ **Stable**
 - 142 tests (unit, integration, property-based, security, concurrency)
 - Zero clippy warnings
-- Comprehensive security audit
-- Full thread safety verification
+- Thread safety verification
+- `#![deny(unsafe_code)]`
 
-🚀 **High Performance**
+🚀 **Performance**
 - Zero-copy buffer reuse APIs
-- 50-70% faster encoding via optimized allocation
-- Efficient memory usage
+- `#[inline]` on hot encode/decode paths
+- Pre-allocated exact-capacity encoding
 
 🔒 **Type Safety**
 - Validated `EncodedString` newtype
@@ -55,21 +56,19 @@ A production-ready, high-performance, well-tested multibase encoding/decoding li
 
 🛡️ **Security**
 - No panics on untrusted input
-- Comprehensive fuzzing infrastructure
-- Security documentation and best practices
+- `#![deny(unsafe_code)]` enforced
+- Fuzzing infrastructure
 - Input validation at all boundaries
 
 🧵 **Thread Safe**
 - All types are Send + Sync
 - No interior mutability
-- Verified concurrent correctness
-- Scales linearly with thread count
+- Verified with concurrent stress tests
 
-📚 **Well Documented**
-- Comprehensive API documentation
-- Usage examples for all features
+📚 **Documented**
+- API documentation with examples
 - Security and concurrency guides
-- Migration guide for v2.0
+- [CHANGELOG.md](CHANGELOG.md) with migration notes
 
 🌐 **Flexible**
 - 24 supported base encodings
@@ -83,28 +82,31 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-multibase = "1.0"
+multi-base = "1.0"
 ```
 
 For `no_std` environments:
 
 ```toml
 [dependencies]
-multibase = { version = "1.0", default-features = false }
+multi-base = { version = "1.0", default-features = false }
 ```
 
-**MSRV**: Rust 1.56.0 (Rust 2021 edition)
+> **Note:** the crate is published as `multi-base` on crates.io and imported
+> as `multi_base` in Rust. The current published version is `1.0.1`.
+
+**MSRV**: Rust 1.85 (Edition 2024)
 
 ## Usage
 
 ### Basic Usage
 
 ```rust
-use multibase::{Base, encode, decode};
+use multi_base::{Base, encode, decode};
 
 // Encode data
 let encoded = encode(Base::Base64, b"hello world");
-println!("{}", encoded); // "md29ybGQ="
+println!("{}", encoded); // "maGVsbG8gd29ybGQ"
 
 // Decode data
 let (base, data) = decode(&encoded, true)?;
@@ -117,7 +119,7 @@ assert_eq!(data, b"hello world");
 When encoding/decoding multiple values, reuse buffers to avoid allocations:
 
 ```rust
-use multibase::{Base, encode_into, decode_into};
+use multi_base::{Base, encode_into, decode_into};
 
 let mut encode_buffer = String::new();
 let mut decode_buffer = Vec::new();
@@ -138,7 +140,7 @@ for data in dataset {
 Use `EncodedString` for validated multibase strings:
 
 ```rust
-use multibase::{EncodedString, Base};
+use multi_base::{EncodedString, Base};
 
 // Parse and validate at construction
 let encoded = EncodedString::new("zCn8eVZg")?;
@@ -159,7 +161,7 @@ let encoded: EncodedString = "md29ybGQ".parse()?;
 The library provides comprehensive error types with context:
 
 ```rust
-use multibase::{decode, Error};
+use multi_base::{decode, Error};
 
 match decode(input, true) {
     Ok((base, data)) => {
@@ -224,13 +226,11 @@ The library supports 24 base encodings:
 
 ## Security
 
-The crate has undergone comprehensive security auditing:
-
 - ✅ No panics on arbitrary untrusted input
-- ✅ Memory safety (no unsafe code)
-- ✅ Comprehensive input validation
+- ✅ `#![deny(unsafe_code)]` enforced at compile time
+- ✅ Input validation at all boundaries
 - ✅ 17 dedicated security tests
-- ✅ Fuzzing infrastructure with 3 targets
+- ✅ Fuzzing infrastructure with 4 targets (3 functional + 1 placeholder)
 
 **Best Practices**:
 - For untrusted input, always use strict mode: `decode(input, true)`
@@ -258,7 +258,7 @@ let handles: Vec<_> = (0..10)
     .map(|_| {
         let d = Arc::clone(&data);
         thread::spawn(move || {
-            multibase::encode(Base::Base64, &*d)
+            multi_base::encode(Base::Base64, &*d)
         })
     })
     .collect();
@@ -273,18 +273,8 @@ See [CONCURRENCY.md](CONCURRENCY.md) for detailed concurrency information.
 
 ## CLI Tool
 
-The crate includes a command-line tool for encoding/decoding:
-
-```bash
-# Encode data
-echo "hello world" | multibase encode --base base64
-
-# Decode data
-echo "md29ybGQK" | multibase decode
-
-# Specify input directly
-multibase encode --base base58btc --input "hello world"
-```
+The crate includes a command-line tool for encoding/decoding, located in the
+`cli/` directory.
 
 Build the CLI:
 ```bash
@@ -292,9 +282,21 @@ cd cli
 cargo build --release
 ```
 
+Example usage:
+```bash
+# Encode data
+echo "hello world" | multibase encode --base base64
+
+# Decode data
+echo "maGVsbG8gd29ybGQ" | multibase decode
+
+# Specify input directly
+multibase encode --base base58btc --input "hello world"
+```
+
 ## Testing
 
-The crate has comprehensive test coverage:
+The crate has 142 tests:
 
 - **142 tests total** (excluding ignored tests)
   - 12 unit tests
@@ -339,19 +341,21 @@ cargo doc --open
 ```
 
 Additional documentation:
-- [SECURITY.md](SECURITY.md) - Security audit and best practices
+- [SECURITY.md](SECURITY.md) - Security review and best practices
 - [CONCURRENCY.md](CONCURRENCY.md) - Thread safety analysis
-- [CHANGELOG.md](CHANGELOG.md) - Version history and migration guide
+- [CHANGELOG.md](CHANGELOG.md) - Version history and migration notes
 
 ## Maintainers
 
+This Repo: [@dhuseby](https://github.com/dhuseby).
+
 Captain: [@dignifiedquire](https://github.com/dignifiedquire).
 
-Contributors: [@koushiro](https://github.com/koushiro), and [others](https://github.com/multiformats/rust-multibase/graphs/contributors).
+Contributors: [@koushiro](https://github.com/koushiro), and [others](https://github.com/cryptidtech/multi-base/graphs/contributors).
 
 ## Contribute
 
-Contributions welcome! Please check out [the issues](https://github.com/multiformats/rust-multibase/issues).
+Contributions welcome! Please check out [the issues](https://github.com/cryptidtech/multi-base/issues).
 
 Check out our [contributing document](https://github.com/multiformats/multiformats/blob/master/contributing.md) for more information on how we work, and about contributing in general.
 

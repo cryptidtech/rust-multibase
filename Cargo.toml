@@ -1,8 +1,9 @@
 [package]
 name = "multi-base"
-version = "1.0.0"
+version = "1.0.2"
 authors = ["Friedel Ziegelmayer <dignifiedquire@gmail.com>", "Dave Grantham <dwg@linuxprogrammer.org>"]
-edition = "2021"
+edition = "2024"
+rust-version = "1.85"
 license = "MIT"
 readme = "README.md"
 description = "multibase in rust"
@@ -24,6 +25,14 @@ thiserror = { version = "2.0", default-features = false }
 criterion = { version = "0.8", features = ["html_reports"] }
 proptest = "1.4"
 rand = "0.8"
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+
+[lints.rust]
+unsafe_code = "deny"
 
 [[bench]]
 name = "multibase"

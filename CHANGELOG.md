@@ -5,253 +5,133 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2026-07-13
-
-### Changed
-- Synced from bettersign workspace (bs-multibase 0.7.0)
-- Renamed crate from `bs-multibase` to `multi-base`
-- Reimplemented `Base256Emoji` inline (dropped external `base256emoji` dep)
-- Initial published release on crates.io as `multi-base`
-
-## [Unreleased]
+## [1.0.2] - 2026-07-15
 
 ### Added
 
-#### Phase 2: Performance Optimizations
-- **Zero-copy APIs**: Added `encode_into()` and `decode_into()` functions for buffer reuse
-  - Significantly faster when encoding/decoding multiple values in loops
-  - Avoids allocations by reusing existing buffers
-- **Performance improvement**: Optimized `encode()` to pre-allocate exact capacity
-  - Replaced `insert(0, char)` with pre-allocated string construction
-  - 50-70% faster encoding for small strings
-
-#### Phase 3: Type Safety Enhancements
-- **EncodedString newtype**: Added validated multibase-encoded string type
-  - Guarantees string has valid base code prefix at construction time
-  - "Parse, don't validate" pattern for type safety
-  - Implements `FromStr`, `TryFrom<String>`, `TryFrom<&str>`, `AsRef<str>`, `Display`
-  - Provides `decode()` and `decode_with_strictness()` methods
-- **Convenience functions**: Added `encode_to_validated()` and `parse_encoded()`
-
-#### Phase 4: Comprehensive Testing
-- **Property-based tests**: Added 16 property tests using proptest
-  - Round-trip invariant verification
-  - Encode/decode determinism checks
-  - Buffer reuse correctness validation
-- **Error handling tests**: Added comprehensive error case coverage
-- **Concurrency tests**: Added parallel operation verification
-- **Benchmarks**: Enhanced benchmarking for all base types and sizes
-
-#### Phase 5: Macro Improvements
-- **Macro documentation**: Added comprehensive documentation for all macros
-  - `build_base_enum`: Documents Base enum generation
-  - `derive_base_encoding`: Documents data-encoding codec generation
-  - `derive_base_x`: Documents base-x codec generation
-- **Macro hygiene**: Added `$crate::` prefixes for proper hygiene
-
-#### Phase 7: CLI Tool Improvements
-- **Clap v4 migration**: Migrated CLI from structopt 0.3 to clap v4
-- **Code deduplication**: Unified Base↔string mappings with macro
-- **Better error messages**: Added context to all error paths
-  - Unknown bases now list all available options
-  - I/O errors include operation context
-
-#### Phase 8: Security Audit
-- **Security tests**: Added 17 comprehensive security tests
-  - Large input handling (1 MB tested)
-  - Malformed input rejection
-  - Buffer reuse safety
-  - Concurrent operation safety
-  - Resource exhaustion resistance
-- **Fuzzing infrastructure**: Set up cargo-fuzz with 3 targets
-  - `fuzz_decode`: Arbitrary string decoding
-  - `fuzz_encode`: Arbitrary byte encoding
-  - `fuzz_roundtrip`: Round-trip verification
-- **Security documentation**: Added SECURITY.md with:
-  - Security audit findings
-  - Best practices for users
-  - Input size limit recommendations
-  - Vulnerability reporting process
-
-#### Phase 9: Concurrency Analysis
-- **Thread safety tests**: Added 20 thread safety tests
-  - Compile-time Send/Sync assertions
-  - Cross-thread send/sync verification
-  - Concurrent correctness testing (stress test with 2000 operations)
-- **Concurrency documentation**: Added CONCURRENCY.md with:
-  - Thread safety guarantees for all types
-  - Safe concurrent usage patterns
-  - Performance considerations
-  - Best practices
+- **`#![deny(unsafe_code)]`** at the crate root. The library contains no
+  `unsafe` code; this lint enforces that invariant at compile time.
+- **`#[inline]`** on hot encode/decode paths: `encode`, `decode`,
+  `encode_into`, `decode_into`, `encode_to_validated`, `parse_encoded`,
+  `Base::from_code`, `Base::code`, `Base::encode`, `Base::decode`,
+  `Base::decode_into`, `EncodedString::base`, `EncodedString::as_str`,
+  `EncodedString::decode`, `EncodedString::decode_with_strictness`, and the
+  macro-generated `BaseCodec` implementations.
+- **`const fn`**: `Base::from_code`, `Base::code`, and `EncodedString::base`
+  are now `const fn`.
+- **`#[must_use]`** on `EncodedString::base`, `as_str`, and `into_inner`.
+- **`# Errors`** doc sections on `decode()` and `Base::from_code`.
+- **`# Panics`** doc section on `encode_to_validated()`.
+- **MSRV declared**: `rust-version = "1.85"` in `Cargo.toml`. CI verifies the
+  MSRV with a dedicated job.
+- **`cargo audit`** job in CI.
+- **Clippy lint configuration**: `[lints.clippy]` with `pedantic`, `nursery`,
+  and `cargo` groups (all `warn`), plus `[lints.rust] unsafe_code = "deny"`.
 
 ### Changed
 
-#### Phase 1: Critical Fixes
-- **BREAKING**: Error type now uses thiserror instead of manual implementation
-  - More ergonomic error handling with better error messages
-  - `#[non_exhaustive]` attribute added for forward compatibility
-  - Better error context preservation
-- **Identity encoding**: Now uses lossy UTF-8 conversion instead of panicking
-  - Invalid UTF-8 bytes replaced with Unicode replacement character (U+FFFD)
-  - **BREAKING**: Invalid UTF-8 no longer panics but won't round-trip perfectly
-- **Edition upgrade**: Updated from Rust 2018 to Rust 2021
-- **License headers**: Added SPDX-License-Identifier to all source files
+- **Edition 2024**: Updated from Rust 2021. Required escaping the now-reserved
+  `gen` keyword (`rng.r#gen()`) in benchmarks.
+- **CLI fixed**: `cli/Cargo.toml` and `cli/main.rs` updated from the legacy
+  `multibase` dependency name to `multi-base`. The CLI now builds.
+- **Fuzz targets fixed**: `fuzz/Cargo.toml` and fuzz targets updated from the
+  legacy `multibase` name to `multi-base`, with edition 2024 and lint config.
+- **`Error::eq`**: Merged identical match arms for unit variants into a single
+  pattern.
+- **Doc comments**: Backticked `rfc4648` in base-variant doc comments.
 
-#### Documentation Improvements
-- **API documentation**: Enhanced all public item documentation
-  - Added performance characteristics
-  - Added usage examples
-  - Documented error conditions
-- **Module documentation**: Added comprehensive module docs
-  - When to use which encoding
-  - Security considerations
-  - Common pitfalls
+## [1.0.1] - 2026-07-13
 
-### Fixed
+### Changed
 
-- **Security**: Fixed potential panic in Identity encoding with invalid UTF-8
-- **Performance**: Fixed O(n) string reallocation in `encode()`
-- **Error handling**: Error context no longer lost during conversions
-- **Documentation**: Fixed rustdoc warnings and broken links
+- Synced from bettersign workspace (bs-multibase 0.7.0).
+- Renamed crate from `bs-multibase` to `multi-base`.
+- Reimplemented `Base256Emoji` inline (dropped external `base256emoji` dep).
+- Initial published release on crates.io as `multi-base`.
 
-### Development
+### Added
 
-- **Test coverage**: Increased from 7 to 142 tests (excluding 4 ignored)
-  - 12 unit tests
-  - 63 integration tests
-  - 16 property tests
-  - 17 security tests
-  - 20 thread safety tests
-  - 14 doc tests
-- **Quality assurance**: Zero clippy warnings with `-D warnings`
-- **CI improvements**: All tests pass consistently
+- **Zero-copy APIs**: `encode_into()` and `decode_into()` for buffer reuse.
+- **`encode()` optimization**: Pre-allocates exact capacity instead of
+  `insert(0, char)`.
+- **`EncodedString` newtype**: Validated multibase-encoded string type
+  implementing `FromStr`, `TryFrom<String>`, `TryFrom<&str>`, `AsRef<str>`,
+  `Display`. Provides `decode()` and `decode_with_strictness()` methods.
+- **Convenience functions**: `encode_to_validated()` and `parse_encoded()`.
+- **Property-based tests**: 16 proptest cases for round-trip, determinism, and
+  buffer-reuse invariants.
+- **Error handling tests**: Coverage for all base types.
+- **Concurrency tests**: Parallel operation verification.
+- **Benchmarks**: Enhanced benchmarking for all base types and sizes.
+- **Macro documentation**: Comprehensive docs for `build_base_enum`,
+  `derive_base_encoding`, and `derive_base_x` macros.
+- **Macro hygiene**: `$crate::` prefixes for proper hygiene.
+- **Clap v4 migration**: CLI migrated from structopt 0.3 to clap v4.
+- **CLI deduplication**: Unified Base↔string mappings with a macro.
+- **CLI error messages**: Context added to all error paths; unknown bases list
+  all available options.
+- **Security tests**: 17 tests covering large inputs, malformed input,
+  buffer-reuse safety, concurrent operations, and resource exhaustion.
+- **Fuzzing infrastructure**: `cargo-fuzz` with `fuzz_decode`, `fuzz_encode`,
+  and `fuzz_roundtrip` targets.
+- **SECURITY.md**: Security review findings, best practices, input size limit
+  recommendations, and vulnerability reporting process.
+- **CONCURRENCY.md**: Thread safety guarantees, safe concurrent usage patterns,
+  and performance considerations.
+- **Thread safety tests**: 20 tests with compile-time Send/Sync assertions and
+  a 2000-operation stress test.
+
+### Changed (1.0.1)
+
+- **BREAKING**: Error type uses `thiserror` instead of manual implementation.
+  `#[non_exhaustive]` added for forward compatibility.
+- **BREAKING**: Identity encoding uses lossy UTF-8 conversion instead of
+  panicking. Invalid UTF-8 bytes are replaced with U+FFFD and will not
+  round-trip perfectly.
+- Updated from Rust 2018 to Rust 2021.
+- Added SPDX-License-Identifier headers to all source files.
+- Enhanced all public item documentation with performance characteristics,
+  usage examples, and error conditions.
+
+### Fixed (1.0.1)
+
+- Panic in Identity encoding on invalid UTF-8 (now uses lossy conversion).
+- O(n) string reallocation in `encode()`.
+- Error context lost during conversions.
+- Rustdoc warnings and broken links.
 
 ## [1.0.0] - Previous Release
 
 Initial stable release with basic multibase functionality.
 
 ### Features
-- Support for 24 base encodings
-- Strict and permissive decoding modes
-- no_std support with alloc
-- Basic error handling
-- CLI tool
-
-## Migration Guide: v1.x → v2.0
-
-### Error Handling Changes
-
-**Before (v1.x)**:
-```rust
-match decode(input, true) {
-    Ok((base, data)) => { /* ... */ }
-    Err(Error::UnknownBase(c)) => { /* ... */ }
-    Err(Error::InvalidBaseString) => { /* ... */ }
-}
-```
-
-**After (v2.0)**:
-```rust
-match decode(input, true) {
-    Ok((base, data)) => { /* ... */ }
-    Err(Error::UnknownBase { code }) => { /* ... */ }
-    Err(Error::InvalidBaseString) => { /* ... */ }
-    Err(Error::EmptyInput) => { /* ... */ }
-    // New error variants - use catch-all due to #[non_exhaustive]
-    Err(_) => { /* ... */ }
-}
-```
-
-### Identity Encoding Changes
-
-**Before (v1.x)**:
-- Would panic on invalid UTF-8
-
-**After (v2.0)**:
-- Uses lossy conversion (replacement character U+FFFD)
-- No panic on arbitrary binary data
-
-**Migration**:
-If you relied on panic behavior for validation:
-```rust
-// Validate UTF-8 explicitly if needed
-let data = std::str::from_utf8(bytes)?;
-let encoded = encode(Base::Identity, data.as_bytes());
-```
-
-### New Features You Can Use
-
-**Buffer Reuse** (performance optimization):
-```rust
-let mut encode_buffer = String::new();
-let mut decode_buffer = Vec::new();
-
-for data in dataset {
-    encode_into(Base::Base64, data, &mut encode_buffer);
-    decode_into(&encode_buffer, true, &mut decode_buffer)?;
-}
-```
-
-**Type Safety with EncodedString**:
-```rust
-let encoded = EncodedString::new("zCn8eVZg")?;
-assert_eq!(encoded.base(), Base::Base58Btc);
-let decoded = encoded.decode()?;
-```
-
-**Error Context** (with thiserror):
-```rust
-// Errors now provide better context
-match multibase::decode(input, true) {
-    Err(Error::DataEncodingDecode { message }) => {
-        eprintln!("Decoding failed: {}", message);
-    }
-    Err(e) => eprintln!("Error: {}", e),
-    Ok(_) => {}
-}
-```
+- Support for 24 base encodings.
+- Strict and permissive decoding modes.
+- `no_std` support with `alloc`.
+- Basic error handling.
+- CLI tool.
 
 ## Compatibility
 
 ### Minimum Supported Rust Version (MSRV)
 
-The MSRV is Rust 1.56.0 (Rust 2021 edition).
+Rust 1.85 (Edition 2024).
 
 ### Platform Support
 
-- ✅ Linux
-- ✅ macOS
-- ✅ Windows
-- ✅ WebAssembly (wasm32)
-- ✅ no_std environments (with alloc)
+- Linux
+- macOS
+- Windows
+- WebAssembly (wasm32)
+- `no_std` environments (with `alloc`)
 
-### Breaking Changes
+### Breaking Changes in 1.0.1
 
-The following changes require a major version bump (v2.0.0):
+1. Error type structure changed (uses `thiserror`).
+2. Identity encoding no longer panics (uses lossy conversion).
+3. `#[non_exhaustive]` added to `Error` enum.
+4. Edition updated to 2021.
 
-1. Error type structure changed (uses thiserror)
-2. Identity encoding no longer panics (uses lossy conversion)
-3. `#[non_exhaustive]` added to Error enum
-4. Edition updated to 2021
-
-### Non-Breaking Additions
-
-The following are backwards-compatible additions:
-
-1. New functions: `encode_into()`, `decode_into()`, `encode_to_validated()`, `parse_encoded()`
-2. New type: `EncodedString`
-3. Enhanced documentation
-4. Additional tests
-5. Performance improvements
-
-## Acknowledgments
-
-This release includes improvements guided by:
-- [The Definitive Guide to Rust Error Handling](https://www.howtocodeit.com/articles/the-definitive-guide-to-rust-error-handling)
-- [Writing Production Rust Macros](https://www.howtocodeit.com/articles/writing-production-rust-macros-with-macro-rules)
-- [Ultimate Guide to Rust Newtypes](https://www.howtocodeit.com/articles/ultimate-guide-rust-newtypes)
-- Rust API Guidelines
-- OWASP Security Guidelines
-
-[Unreleased]: https://github.com/multiformats/rust-multibase/compare/v1.0.0...HEAD
+[1.0.2]: https://github.com/cryptidtech/multi-base/compare/v1.0.1...v1.0.2
+[1.0.1]: https://github.com/cryptidtech/multi-base/releases/tag/v1.0.1
 [1.0.0]: https://github.com/multiformats/rust-multibase/releases/tag/v1.0.0

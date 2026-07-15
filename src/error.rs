@@ -40,10 +40,10 @@ pub enum Error {
     #[error("base-x decoding failed")]
     BaseXDecode,
 
-    /// Base256Emoji decoding failed.
+    /// `Base256Emoji` decoding failed.
     ///
     /// The input string contained invalid emoji sequences or could not be
-    /// decoded as Base256Emoji.
+    /// decoded as `Base256Emoji`.
     #[error("base256emoji decoding failed")]
     Base256EmojiDecode,
 
@@ -73,15 +73,15 @@ pub enum Error {
 impl PartialEq for Error {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Error::UnknownBase { code: c1 }, Error::UnknownBase { code: c2 }) => c1 == c2,
-            (Error::InvalidBaseString, Error::InvalidBaseString) => true,
-            (Error::EmptyInput, Error::EmptyInput) => true,
-            (Error::BaseXDecode, Error::BaseXDecode) => true,
-            (Error::Base256EmojiDecode, Error::Base256EmojiDecode) => true,
+            (Self::UnknownBase { code: c1 }, Self::UnknownBase { code: c2 }) => c1 == c2,
             (
-                Error::DataEncodingDecode { message: m1 },
-                Error::DataEncodingDecode { message: m2 },
+                Self::DataEncodingDecode { message: m1 },
+                Self::DataEncodingDecode { message: m2 },
             ) => m1 == m2,
+            (Self::InvalidBaseString, Self::InvalidBaseString)
+            | (Self::EmptyInput, Self::EmptyInput)
+            | (Self::BaseXDecode, Self::BaseXDecode)
+            | (Self::Base256EmojiDecode, Self::Base256EmojiDecode) => true,
             _ => false,
         }
     }
@@ -94,14 +94,14 @@ impl Eq for Error {}
 impl Clone for Error {
     fn clone(&self) -> Self {
         match self {
-            Error::UnknownBase { code } => Error::UnknownBase { code: *code },
-            Error::InvalidBaseString => Error::InvalidBaseString,
-            Error::BaseXDecode => Error::BaseXDecode,
-            Error::Base256EmojiDecode => Error::Base256EmojiDecode,
-            Error::DataEncodingDecode { message } => Error::DataEncodingDecode {
+            Self::UnknownBase { code } => Self::UnknownBase { code: *code },
+            Self::InvalidBaseString => Self::InvalidBaseString,
+            Self::BaseXDecode => Self::BaseXDecode,
+            Self::Base256EmojiDecode => Self::Base256EmojiDecode,
+            Self::DataEncodingDecode { message } => Self::DataEncodingDecode {
                 message: message.clone(),
             },
-            Error::EmptyInput => Error::EmptyInput,
+            Self::EmptyInput => Self::EmptyInput,
         }
     }
 }
@@ -109,17 +109,17 @@ impl Clone for Error {
 // Manual From implementations for error conversions
 impl From<base_x::DecodeError> for Error {
     fn from(_: base_x::DecodeError) -> Self {
-        Error::BaseXDecode
+        Self::BaseXDecode
     }
 }
 
 impl From<data_encoding::DecodeError> for Error {
     fn from(err: data_encoding::DecodeError) -> Self {
         #[cfg(feature = "std")]
-        let message = std::format!("{}", err);
+        let message = std::format!("{err}");
         #[cfg(not(feature = "std"))]
         let message = format!("{}", err);
 
-        Error::DataEncodingDecode { message }
+        Self::DataEncodingDecode { message }
     }
 }

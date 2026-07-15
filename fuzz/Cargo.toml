@@ -2,7 +2,8 @@
 name = "multibase-fuzz"
 version = "0.0.0"
 publish = false
-edition = "2021"
+edition = "2024"
+rust-version = "1.85"
 
 [package.metadata]
 cargo-fuzz = true
@@ -10,8 +11,16 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 
-[dependencies.multibase]
+[dependencies.multi-base]
 path = ".."
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+
+[lints.rust]
+unsafe_code = "deny"
 
 [[bin]]
 name = "fuzz_target_1"

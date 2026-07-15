@@ -9,13 +9,13 @@
 use multi_base::{Base, EncodedString, Error};
 
 /// Compile-time assertion that a type implements Send.
-fn assert_send<T: Send>() {}
+const fn assert_send<T: Send>() {}
 
 /// Compile-time assertion that a type implements Sync.
-fn assert_sync<T: Sync>() {}
+const fn assert_sync<T: Sync>() {}
 
 /// Compile-time assertion that a type implements both Send and Sync.
-fn assert_send_sync<T: Send + Sync>() {}
+const fn assert_send_sync<T: Send + Sync>() {}
 
 /// Test that Base enum is Send and Sync.
 ///
@@ -43,9 +43,9 @@ fn error_is_send_sync() {
     assert_send_sync::<Error>();
 }
 
-/// Test that EncodedString is Send and Sync.
+/// Test that `EncodedString` is Send and Sync.
 ///
-/// EncodedString should be Send and Sync because:
+/// `EncodedString` should be Send and Sync because:
 /// - It contains a Base (which is Send + Sync)
 /// - It contains a String (which is Send + Sync)
 /// - No interior mutability is present
@@ -129,7 +129,7 @@ fn error_sync_between_threads() {
     handle.join().unwrap();
 }
 
-/// Test that EncodedString can be safely sent between threads.
+/// Test that `EncodedString` can be safely sent between threads.
 #[test]
 fn encoded_string_send_between_threads() {
     use std::thread;
@@ -142,7 +142,7 @@ fn encoded_string_send_between_threads() {
     handle.join().unwrap();
 }
 
-/// Test that EncodedString can be safely shared between threads.
+/// Test that `EncodedString` can be safely shared between threads.
 #[test]
 fn encoded_string_sync_between_threads() {
     use std::sync::Arc;
@@ -214,7 +214,7 @@ fn concurrent_decoding_correctness() {
     }
 }
 
-/// Test concurrent Base::from_code operations.
+/// Test concurrent `Base::from_code` operations.
 #[test]
 fn concurrent_base_from_code() {
     use std::thread;
@@ -237,7 +237,7 @@ fn concurrent_base_from_code() {
     }
 }
 
-/// Test concurrent encode_into with thread-local buffers.
+/// Test concurrent `encode_into` with thread-local buffers.
 #[test]
 fn concurrent_encode_into_thread_local_buffers() {
     use std::sync::Arc;
@@ -265,7 +265,7 @@ fn concurrent_encode_into_thread_local_buffers() {
     }
 }
 
-/// Test concurrent decode_into with thread-local buffers.
+/// Test concurrent `decode_into` with thread-local buffers.
 #[test]
 fn concurrent_decode_into_thread_local_buffers() {
     use std::sync::Arc;
@@ -328,7 +328,7 @@ fn concurrent_multi_base_operations() {
     }
 }
 
-/// Test that EncodedString operations are thread-safe.
+/// Test that `EncodedString` operations are thread-safe.
 #[test]
 fn concurrent_encoded_string_operations() {
     use std::sync::Arc;
@@ -412,8 +412,8 @@ fn concurrent_error_handling() {
 /// Test stress scenario with many concurrent operations.
 #[test]
 fn stress_test_concurrent_operations() {
-    use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
     use std::thread;
 
     let counter = Arc::new(AtomicUsize::new(0));
@@ -424,7 +424,7 @@ fn stress_test_concurrent_operations() {
         let c = Arc::clone(&counter);
         let handle = thread::spawn(move || {
             for i in 0..100 {
-                let data = format!("data{}", i);
+                let data = format!("data{i}");
                 let encoded = multi_base::encode(Base::Base64, data.as_bytes());
                 let (base, decoded) = multi_base::decode(&encoded, true).unwrap();
                 assert_eq!(base, Base::Base64);

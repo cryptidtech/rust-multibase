@@ -1,4 +1,6 @@
-use multi_base::{decode, decode_into, encode, Base, Base::*};
+#![allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+
+use multi_base::{Base, Base::*, decode, decode_into, encode};
 
 fn encode_decode_assert(input: &[u8], test_cases: Vec<(Base, &str)>) {
     for (base, output) in test_cases {
@@ -30,7 +32,7 @@ fn test_round_trip() {
     for case in test_cases {
         let encoded = encode(Base58Btc, case);
         let decoded = decode(encoded, true).unwrap();
-        assert_eq!(decoded, (Base58Btc, case.as_bytes().to_vec()))
+        assert_eq!(decoded, (Base58Btc, case.as_bytes().to_vec()));
     }
 }
 
@@ -74,7 +76,10 @@ fn preserves_leading_zero() {
     let input = b"\x00yes mani !";
     let test_cases = vec![
         (Identity, "\x00\x00yes mani !"),
-        (Base2, "00000000001111001011001010111001100100000011011010110000101101110011010010010000000100001"),
+        (
+            Base2,
+            "00000000001111001011001010111001100100000011011010110000101101110011010010010000000100001",
+        ),
         (Base8, "7000745453462015530267151100204"),
         (Base10, "90573277761329450583662625"),
         (Base16Lower, "f00796573206d616e692021"),
@@ -106,7 +111,10 @@ fn preserves_two_leading_zeroes() {
     let input = b"\x00\x00yes mani !";
     let test_cases = vec![
         (Identity, "\x00\x00\x00yes mani !"),
-        (Base2, "0000000000000000001111001011001010111001100100000011011010110000101101110011010010010000000100001"),
+        (
+            Base2,
+            "0000000000000000001111001011001010111001100100000011011010110000101101110011010010010000000100001",
+        ),
         (Base8, "700000171312714403326055632220041"),
         (Base10, "900573277761329450583662625"),
         (Base16Lower, "f0000796573206d616e692021"),
@@ -156,11 +164,10 @@ fn case_insensitivity() {
 }
 
 // ============================================================================
-// Phase 1 Critical Fix Tests
+// Identity Encoding Tests
 // ============================================================================
 
 /// Test that Identity encoding handles invalid UTF-8 gracefully without panicking.
-/// This is a critical security fix - the old code would panic on binary data.
 #[test]
 fn identity_encode_invalid_utf8_no_panic() {
     // Invalid UTF-8 sequences
@@ -197,7 +204,7 @@ fn identity_roundtrip_valid_utf8() {
     }
 }
 
-/// Test that decoding an empty string returns EmptyInput error.
+/// Test that decoding an empty string returns `EmptyInput` error.
 #[test]
 fn decode_empty_string_error() {
     use multi_base::Error;
@@ -207,11 +214,11 @@ fn decode_empty_string_error() {
 
     match result.unwrap_err() {
         Error::EmptyInput => {} // Expected
-        other => panic!("Expected EmptyInput error, got: {:?}", other),
+        other => panic!("Expected EmptyInput error, got: {other:?}"),
     }
 }
 
-/// Test that unknown base codes return UnknownBase error.
+/// Test that unknown base codes return `UnknownBase` error.
 #[test]
 fn decode_unknown_base_error() {
     use multi_base::Error;
@@ -224,22 +231,19 @@ fn decode_unknown_base_error() {
 
     for input in test_cases {
         let result = decode(input, true);
-        assert!(result.is_err(), "Expected error for input: {}", input);
+        assert!(result.is_err(), "Expected error for input: {input}");
 
         match result.unwrap_err() {
             Error::UnknownBase { code } => {
                 // Verify the error contains the invalid code
                 assert_eq!(code, input.chars().next().unwrap());
             }
-            other => panic!(
-                "Expected UnknownBase error for '{}', got: {:?}",
-                input, other
-            ),
+            other => panic!("Expected UnknownBase error for '{input}', got: {other:?}"),
         }
     }
 }
 
-/// Test that Base::from_code returns proper error for invalid codes.
+/// Test that `Base::from_code` returns proper error for invalid codes.
 #[test]
 fn base_from_code_error() {
     use multi_base::Error;
@@ -254,7 +258,7 @@ fn base_from_code_error() {
             Error::UnknownBase { code: c } => {
                 assert_eq!(c, code);
             }
-            other => panic!("Expected UnknownBase error, got: {:?}", other),
+            other => panic!("Expected UnknownBase error, got: {other:?}"),
         }
     }
 }
@@ -273,9 +277,7 @@ fn decode_malformed_data_errors() {
         let result = decode(input, true);
         assert!(
             result.is_err(),
-            "Expected error for malformed input: {} ({})",
-            input,
-            description
+            "Expected error for malformed input: {input} ({description})"
         );
         // Just verify it errors - don't care about specific error type
     }
@@ -301,11 +303,11 @@ fn error_traits() {
     assert_eq!(error, cloned);
 
     // Test Debug
-    let debug_str = format!("{:?}", error);
+    let debug_str = format!("{error:?}");
     assert!(!debug_str.is_empty());
 
     // Test Display (from thiserror)
-    let display_str = format!("{}", error);
+    let display_str = format!("{error}");
     assert!(!display_str.is_empty());
     assert!(display_str.contains("empty"));
 }
@@ -354,10 +356,10 @@ fn identity_binary_data_lossy() {
 }
 
 // ============================================================================
-// Phase 2 Performance Optimization Tests - Zero-Copy APIs
+// Zero-Copy Buffer Reuse Tests
 // ============================================================================
 
-/// Test encode_into with buffer reuse.
+/// Test `encode_into` with buffer reuse.
 #[test]
 fn test_encode_into_buffer_reuse() {
     use multi_base::encode_into;
@@ -377,7 +379,7 @@ fn test_encode_into_buffer_reuse() {
     assert_eq!(buffer, "f72757374");
 }
 
-/// Test encode_into with all base types.
+/// Test `encode_into` with all base types.
 #[test]
 fn test_encode_into_all_bases() {
     use multi_base::encode_into;
@@ -407,7 +409,7 @@ fn test_encode_into_all_bases() {
     }
 }
 
-/// Test decode_into with buffer reuse.
+/// Test `decode_into` with buffer reuse.
 #[test]
 fn test_decode_into_buffer_reuse() {
     use multi_base::decode_into;
@@ -430,7 +432,7 @@ fn test_decode_into_buffer_reuse() {
     assert_eq!(buffer, b"rust");
 }
 
-/// Test that encode_into produces same results as encode.
+/// Test that `encode_into` produces same results as encode.
 #[test]
 fn test_encode_into_matches_encode() {
     use multi_base::encode_into;
@@ -463,14 +465,13 @@ fn test_encode_into_matches_encode() {
 
             assert_eq!(
                 buffer, expected,
-                "Mismatch for base {:?} with data {:?}",
-                base, data
+                "Mismatch for base {base:?} with data {data:?}"
             );
         }
     }
 }
 
-/// Test that decode_into produces same results as decode.
+/// Test that `decode_into` produces same results as decode.
 #[test]
 fn test_decode_into_matches_decode() {
     let test_cases = vec![
@@ -495,10 +496,10 @@ fn test_decode_into_matches_decode() {
     }
 }
 
-/// Test decode_into error handling.
+/// Test `decode_into` error handling.
 #[test]
 fn test_decode_into_errors() {
-    use multi_base::{decode_into, Error};
+    use multi_base::{Error, decode_into};
 
     let mut buffer = Vec::new();
 
@@ -513,7 +514,7 @@ fn test_decode_into_errors() {
     assert!(matches!(result.unwrap_err(), Error::UnknownBase { .. }));
 }
 
-/// Test encode_into with empty input.
+/// Test `encode_into` with empty input.
 #[test]
 fn test_encode_into_empty() {
     use multi_base::encode_into;
@@ -523,7 +524,7 @@ fn test_encode_into_empty() {
     assert_eq!(buffer, "m");
 }
 
-/// Test decode_into with empty data (just code).
+/// Test `decode_into` with empty data (just code).
 #[test]
 fn test_decode_into_empty_data() {
     use multi_base::decode_into;
@@ -534,7 +535,7 @@ fn test_decode_into_empty_data() {
     assert_eq!(buffer, b"");
 }
 
-/// Test encode_into doesn't grow buffer unnecessarily.
+/// Test `encode_into` doesn't grow buffer unnecessarily.
 #[test]
 fn test_encode_into_buffer_capacity() {
     use multi_base::encode_into;
@@ -549,7 +550,7 @@ fn test_encode_into_buffer_capacity() {
     assert!(buffer.capacity() >= initial_capacity);
 }
 
-/// Test decode_into buffer reuse in loop (performance test).
+/// Test `decode_into` buffer reuse in loop (performance test).
 #[test]
 fn test_decode_into_loop_performance() {
     use multi_base::decode_into;
@@ -566,10 +567,10 @@ fn test_decode_into_loop_performance() {
 }
 
 // ============================================================================
-// Phase 3 Type Safety Tests - EncodedString Newtype
+// EncodedString Newtype Tests
 // ============================================================================
 
-/// Test EncodedString basic usage.
+/// Test `EncodedString` basic usage.
 #[test]
 fn test_encoded_string_basic() {
     use multi_base::EncodedString;
@@ -582,7 +583,7 @@ fn test_encoded_string_basic() {
     assert_eq!(decoded, b"hello");
 }
 
-/// Test EncodedString FromStr implementation.
+/// Test `EncodedString` `FromStr` implementation.
 #[test]
 fn test_encoded_string_from_str() {
     use multi_base::EncodedString;
@@ -595,7 +596,7 @@ fn test_encoded_string_from_str() {
     assert_eq!(parsed.base(), Base16Lower);
 }
 
-/// Test EncodedString TryFrom implementations.
+/// Test `EncodedString` `TryFrom` implementations.
 #[test]
 fn test_encoded_string_try_from() {
     use multi_base::EncodedString;
@@ -610,7 +611,7 @@ fn test_encoded_string_try_from() {
     assert_eq!(encoded.base(), Base64);
 }
 
-/// Test EncodedString error handling.
+/// Test `EncodedString` error handling.
 #[test]
 fn test_encoded_string_errors() {
     use multi_base::{EncodedString, Error};
@@ -626,7 +627,7 @@ fn test_encoded_string_errors() {
     assert!(matches!(result.unwrap_err(), Error::UnknownBase { .. }));
 }
 
-/// Test EncodedString validation only checks prefix.
+/// Test `EncodedString` validation only checks prefix.
 #[test]
 fn test_encoded_string_validates_prefix_only() {
     use multi_base::EncodedString;
@@ -641,7 +642,7 @@ fn test_encoded_string_validates_prefix_only() {
     assert!(result.is_err());
 }
 
-/// Test encode_to_validated convenience function.
+/// Test `encode_to_validated` convenience function.
 #[test]
 fn test_encode_to_validated() {
     use multi_base::encode_to_validated;
@@ -654,7 +655,7 @@ fn test_encode_to_validated() {
     assert_eq!(decoded, b"hello");
 }
 
-/// Test parse_encoded convenience function.
+/// Test `parse_encoded` convenience function.
 #[test]
 fn test_parse_encoded() {
     use multi_base::parse_encoded;
@@ -666,10 +667,10 @@ fn test_parse_encoded() {
     assert!(result.is_err());
 }
 
-/// Test EncodedString with all base types.
+/// Test `EncodedString` with all base types.
 #[test]
 fn test_encoded_string_all_bases() {
-    use multi_base::{encode_to_validated, EncodedString};
+    use multi_base::{EncodedString, encode_to_validated};
 
     let data = b"test";
     let bases = vec![Base16Lower, Base32Lower, Base58Btc, Base64];
@@ -689,16 +690,16 @@ fn test_encoded_string_all_bases() {
     }
 }
 
-/// Test EncodedString Display trait.
+/// Test `EncodedString` Display trait.
 #[test]
 fn test_encoded_string_display() {
     use multi_base::EncodedString;
 
     let encoded = EncodedString::new("zCn8eVZg").unwrap();
-    assert_eq!(format!("{}", encoded), "zCn8eVZg");
+    assert_eq!(format!("{encoded}"), "zCn8eVZg");
 }
 
-/// Test EncodedString into_inner.
+/// Test `EncodedString` `into_inner`.
 #[test]
 fn test_encoded_string_into_inner() {
     use multi_base::EncodedString;
@@ -708,7 +709,7 @@ fn test_encoded_string_into_inner() {
     assert_eq!(inner, "zCn8eVZg");
 }
 
-/// Test EncodedString clone and equality.
+/// Test `EncodedString` clone and equality.
 #[test]
 fn test_encoded_string_clone_eq() {
     use multi_base::EncodedString;
@@ -721,7 +722,7 @@ fn test_encoded_string_clone_eq() {
     assert_ne!(encoded1, encoded3);
 }
 
-/// Test EncodedString decode_with_strictness.
+/// Test `EncodedString` `decode_with_strictness`.
 #[test]
 fn test_encoded_string_strictness() {
     use multi_base::EncodedString;
@@ -736,7 +737,7 @@ fn test_encoded_string_strictness() {
 }
 
 // ============================================================================
-// Phase 4 Comprehensive Error Tests - All Bases
+// Error Handling Tests - All Bases
 // ============================================================================
 
 /// Test Base2 error handling with invalid characters.
@@ -754,8 +755,7 @@ fn test_base2_error_handling() {
         let result = decode(input, true);
         assert!(
             result.is_err(),
-            "Base2 should reject invalid input: {}",
-            input
+            "Base2 should reject invalid input: {input}"
         );
     }
 
@@ -778,8 +778,7 @@ fn test_base8_error_handling() {
         let result = decode(input, true);
         assert!(
             result.is_err(),
-            "Base8 should reject invalid input: {}",
-            input
+            "Base8 should reject invalid input: {input}"
         );
     }
 
@@ -802,8 +801,7 @@ fn test_base10_error_handling() {
         let result = decode(input, true);
         assert!(
             result.is_err(),
-            "Base10 should reject invalid input: {}",
-            input
+            "Base10 should reject invalid input: {input}"
         );
     }
 
@@ -825,8 +823,7 @@ fn test_base16_error_handling() {
         let result = decode(input, true);
         assert!(
             result.is_err(),
-            "Base16Lower should reject invalid input: {}",
-            input
+            "Base16Lower should reject invalid input: {input}"
         );
     }
 
@@ -851,8 +848,7 @@ fn test_base32_error_handling() {
         let result = decode(input, true);
         assert!(
             result.is_err(),
-            "Base32 should reject invalid input: {}",
-            input
+            "Base32 should reject invalid input: {input}"
         );
     }
 
@@ -875,8 +871,7 @@ fn test_base36_error_handling() {
         let result = decode(input, true);
         assert!(
             result.is_err(),
-            "Base36 should reject invalid input: {}",
-            input
+            "Base36 should reject invalid input: {input}"
         );
     }
 
@@ -900,8 +895,7 @@ fn test_base58_error_handling() {
         let result = decode(input, true);
         assert!(
             result.is_err(),
-            "Base58 should reject invalid input: {}",
-            input
+            "Base58 should reject invalid input: {input}"
         );
     }
 
@@ -923,8 +917,7 @@ fn test_base64_error_handling() {
         let result = decode(input, true);
         assert!(
             result.is_err(),
-            "Base64 should reject invalid input: {}",
-            input
+            "Base64 should reject invalid input: {input}"
         );
     }
 
@@ -933,7 +926,7 @@ fn test_base64_error_handling() {
     assert!(decode(&valid, true).is_ok());
 }
 
-/// Test Base64Url error handling with invalid characters.
+/// Test `Base64Url` error handling with invalid characters.
 #[test]
 fn test_base64url_error_handling() {
     // Base64Url: A-Z, a-z, 0-9, -, _
@@ -947,8 +940,7 @@ fn test_base64url_error_handling() {
         let result = decode(input, true);
         assert!(
             result.is_err(),
-            "Base64Url should reject invalid input: {}",
-            input
+            "Base64Url should reject invalid input: {input}"
         );
     }
 
@@ -977,8 +969,7 @@ fn test_all_bases_empty_data() {
         let result = decode(code_str, true);
         assert!(
             result.is_ok(),
-            "Base {:?} should handle empty data",
-            expected_base
+            "Base {expected_base:?} should handle empty data"
         );
 
         let (base, data) = result.unwrap();
@@ -1012,7 +1003,7 @@ fn test_all_bases_single_byte() {
     for base in bases {
         let encoded = encode(base, &single_byte);
         let (decoded_base, decoded_data) = decode(&encoded, true)
-            .unwrap_or_else(|_| panic!("Failed to decode single byte for {:?}", base));
+            .unwrap_or_else(|_| panic!("Failed to decode single byte for {base:?}"));
 
         assert_eq!(decoded_base, base);
         assert_eq!(decoded_data, single_byte);
@@ -1039,8 +1030,7 @@ fn test_strict_vs_permissive_mode() {
         if let Ok((strict_base, strict_data)) = strict_result {
             assert!(
                 permissive_result.is_ok(),
-                "Permissive mode should succeed if strict mode succeeds for input: {}",
-                input
+                "Permissive mode should succeed if strict mode succeeds for input: {input}"
             );
 
             let (permissive_base, permissive_data) = permissive_result.unwrap();
@@ -1061,7 +1051,7 @@ fn test_error_messages_are_descriptive() {
     assert!(result.is_err());
     let error_msg = format!("{}", result.unwrap_err());
     assert!(
-        error_msg.contains("x"),
+        error_msg.contains('x'),
         "Error message should mention invalid code 'x'"
     );
 
@@ -1087,21 +1077,21 @@ fn test_all_error_variants() {
 
     // EmptyInput
     let err = Error::EmptyInput;
-    assert!(format!("{}", err).contains("empty"));
+    assert!(format!("{err}").contains("empty"));
 
     // UnknownBase
     let err = Error::UnknownBase { code: 'x' };
-    let msg = format!("{}", err);
+    let msg = format!("{err}");
     assert!(msg.contains("unknown") || msg.contains("base"));
-    assert!(msg.contains("x"));
+    assert!(msg.contains('x'));
 
     // InvalidBaseString
     let err = Error::InvalidBaseString;
-    assert!(format!("{}", err).contains("invalid"));
+    assert!(format!("{err}").contains("invalid"));
 
     // All errors should support Debug
     let err = Error::EmptyInput;
-    let debug = format!("{:?}", err);
+    let debug = format!("{err:?}");
     assert!(!debug.is_empty());
 }
 
@@ -1129,7 +1119,7 @@ fn test_no_panic_under_various_inputs() {
     }
 }
 
-/// Test that Base32Z uses correct alphabet.
+/// Test that `Base32Z` uses correct alphabet.
 #[test]
 fn test_base32z_alphabet() {
     // Base32Z uses: ybndrfg8ejkmcpqxot1uwisza345h769
@@ -1148,7 +1138,7 @@ fn test_base32z_alphabet() {
 }
 
 // ============================================================================
-// Phase 4 Concurrency and Thread Safety Tests
+// Concurrency and Thread Safety Tests
 // ============================================================================
 
 /// Test concurrent encoding from multiple threads.
@@ -1206,7 +1196,7 @@ fn test_concurrent_decoding() {
     }
 }
 
-/// Test concurrent encoding with buffer reuse (encode_into).
+/// Test concurrent encoding with buffer reuse (`encode_into`).
 #[test]
 fn test_concurrent_encode_into() {
     use multi_base::encode_into;
@@ -1239,7 +1229,7 @@ fn test_concurrent_encode_into() {
     }
 }
 
-/// Test concurrent decoding with buffer reuse (decode_into).
+/// Test concurrent decoding with buffer reuse (`decode_into`).
 #[test]
 fn test_concurrent_decode_into() {
     use multi_base::decode_into;
@@ -1305,7 +1295,7 @@ fn test_many_concurrent_operations() {
     }
 }
 
-/// Test that EncodedString is Send and Sync.
+/// Test that `EncodedString` is Send and Sync.
 #[test]
 fn test_encoded_string_is_send_sync() {
     use multi_base::EncodedString;
@@ -1322,7 +1312,7 @@ fn test_encoded_string_is_send_sync() {
     handle.join().expect("Thread panicked");
 }
 
-/// Test that EncodedString can be shared across threads via Arc.
+/// Test that `EncodedString` can be shared across threads via Arc.
 #[test]
 fn test_encoded_string_shared_across_threads() {
     use multi_base::EncodedString;
@@ -1347,7 +1337,7 @@ fn test_encoded_string_shared_across_threads() {
     }
 }
 
-/// Test concurrent Base::from_code calls.
+/// Test concurrent `Base::from_code` calls.
 #[test]
 fn test_concurrent_base_from_code() {
     use std::thread;

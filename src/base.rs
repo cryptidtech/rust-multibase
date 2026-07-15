@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use crate::impls::*;
+use crate::impls::BaseCodec;
 
 #[cfg(not(feature = "std"))]
 use alloc::{string::String, vec::Vec};
@@ -29,7 +29,7 @@ use alloc::{string::String, vec::Vec};
 /// Where:
 /// - `#[doc = "..."]` - Documentation attribute for the enum variant
 /// - `'code'` - The single character or emoji that identifies this base encoding
-/// - `VariantName` - The PascalCase name for the enum variant
+/// - `VariantName` - The `PascalCase` name for the enum variant
 ///
 /// # Generated Code
 ///
@@ -72,7 +72,13 @@ macro_rules! build_base_enum {
             /// Convert a character code to the matching base algorithm.
             ///
             /// Returns `Error::UnknownBase` if the code doesn't match any supported base.
-            pub fn from_code(code: char) -> $crate::error::Result<Self> {
+            ///
+            /// # Errors
+            ///
+            /// Returns [`Error::UnknownBase`](crate::error::Error::UnknownBase) if `code`
+            /// does not correspond to any supported base encoding.
+            #[inline]
+            pub const fn from_code(code: char) -> $crate::error::Result<Self> {
         	    match code {
                     $( $code => Ok(Self::$base), )*
             	    _ => Err($crate::error::Error::UnknownBase { code }),
@@ -83,7 +89,8 @@ macro_rules! build_base_enum {
             ///
             /// Each base encoding has a unique single-character (or emoji) prefix
             /// that identifies it in multibase strings.
-            pub fn code(&self) -> char {
+            #[inline]
+            pub const fn code(&self) -> char {
                 match self {
                     $( Self::$base => $code, )*
                 }
@@ -93,6 +100,7 @@ macro_rules! build_base_enum {
             ///
             /// This method returns only the encoded data, without the base code prefix.
             /// Use the public `encode()` function to get the full multibase string.
+            #[inline]
             pub fn encode<I: AsRef<[u8]>>(&self, input: I) -> String {
                 match self {
                     $( Self::$base => $crate::impls::$base::encode(input), )*
@@ -113,12 +121,14 @@ macro_rules! build_base_enum {
             ///
             /// Returns an error if the input contains invalid characters for this base
             /// or if the input is malformed.
+            #[inline]
             pub fn decode<I: AsRef<str>>(&self, input: I, strict: bool) -> $crate::error::Result<Vec<u8>> {
                 match self {
                     $( Self::$base => $crate::impls::$base::decode(input, strict), )*
                 }
             }
 
+            #[inline]
             pub(crate) fn decode_into<I: AsRef<str>>(&self, input: I, strict: bool, buffer: &mut Vec<u8>) -> $crate::error::Result<()> {
                 match self {
                     $( Self::$base => $crate::impls::$base::decode_into(input, strict, buffer), )*
@@ -167,13 +177,13 @@ build_base_enum! {
     'Z' => Base58Flickr,
     /// Base58 bitcoin (alphabet: 123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz).
     'z' => Base58Btc,
-    /// Base64, rfc4648 no padding (alphabet: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/).
+    /// Base64, `rfc4648` no padding (alphabet: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/).
     'm' => Base64,
-    /// Base64, rfc4648 with padding (alphabet: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/).
+    /// Base64, `rfc4648` with padding (alphabet: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/).
     'M' => Base64Pad,
-    /// Base64 url, rfc4648 no padding (alphabet: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_).
+    /// Base64 url, `rfc4648` no padding (alphabet: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_).
     'u' => Base64Url,
-    /// Base64 url, rfc4648 with padding (alphabet: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_).
+    /// Base64 url, `rfc4648` with padding (alphabet: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_).
     'U' => Base64UrlPad,
     /// Base256Emoji (alphabet: 🚀🪐☄🛰🌌🌑🌒🌓🌔🌕🌖🌗🌘🌍🌏🌎🐉☀💻🖥💾💿😂❤😍🤣😊🙏💕😭😘👍😅👏😁🔥🥰💔💖💙😢🤔😆🙄💪😉☺👌🤗💜😔😎😇🌹🤦🎉💞✌✨🤷😱😌🌸🙌😋💗💚😏💛🙂💓🤩😄😀🖤😃💯🙈👇🎶😒🤭❣😜💋👀😪😑💥🙋😞😩😡🤪👊🥳😥🤤👉💃😳✋😚😝😴🌟😬🙃🍀🌷😻😓⭐✅🥺🌈😈🤘💦✔😣🏃💐☹🎊💘😠☝😕🌺🎂🌻😐🖕💝🙊😹🗣💫💀👑🎵🤞😛🔴😤🌼😫⚽🤙☕🏆🤫👈😮🙆🍻🍃🐶💁😲🌿🧡🎁⚡🌞🎈❌✊👋😰🤨😶🤝🚶💰🍓💢🤟🙁🚨💨🤬✈🎀🍺🤓😙💟🌱😖👶🥴▶➡❓💎💸⬇😨🌚🦋😷🕺⚠🙅😟😵👎🤲🤠🤧📌🔵💅🧐🐾🍒😗🤑🌊🤯🐷☎💧😯💆👆🎤🙇🍑❄🌴💣🐸💌📍🥀🤢👅💡💩👐📸👻🤐🤮🎼🥵🚩🍎🍊👼💍📣🥂)
     '🚀' => Base256Emoji,

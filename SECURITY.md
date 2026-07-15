@@ -1,18 +1,15 @@
 # Security Policy
 
-## Security Audit Summary
+## Security Review
 
-This document summarizes the security audit conducted on the multibase crate and provides guidance for users regarding security considerations.
-
-## Audit Date
-
-Last comprehensive security audit: 2025-10-08
+This document summarizes the security posture of the `multi-base` crate and
+provides guidance for users regarding security considerations.
 
 ## Security Review Findings
 
 ### ✅ No Critical Vulnerabilities Found
 
-The codebase has been thoroughly reviewed for common security issues and no critical vulnerabilities were identified.
+The codebase has been reviewed for common security issues and no critical vulnerabilities were identified.
 
 ### Areas Reviewed
 
@@ -42,12 +39,12 @@ The codebase has been thoroughly reviewed for common security issues and no crit
    - Risk: Medium - applications should implement their own size limits if needed
    - **Recommendation**: Applications processing untrusted input should enforce maximum size limits
 
-5. **Input Validation** ✓ COMPREHENSIVE
+5. **Input Validation** ✓ COMPLETE
    - Empty strings: Validated with `Error::EmptyInput`
    - Invalid base codes: Validated with `Error::UnknownBase`
    - Malformed encoded data: Validated by base-specific decoders
    - All validation through `Result` types
-   - Risk: None - comprehensive input validation
+   - Risk: None - input validation at all boundaries
 
 ## Security Best Practices for Users
 
@@ -112,7 +109,7 @@ let (base, data) = multibase::decode(trusted, false)?;
 
 ## Security Testing
 
-The crate includes comprehensive security tests covering:
+The crate includes security tests covering:
 
 - **17 security-focused tests** in `tests/security.rs`
 - Large input handling (up to 1 MB tested)
@@ -157,9 +154,12 @@ cargo fuzz run fuzz_roundtrip # Fuzz full round-trips
 The crate depends on well-maintained libraries:
 
 - `base-x` (0.2.7) - Variable-radix base encoding
-- `base256emoji` (1.0.2) - Base256Emoji encoding
 - `data-encoding` (2.3.1) - Standard base encodings
 - `thiserror` (2.0) - Error handling
+
+The Base256Emoji codec is implemented inline within this crate (it was
+previously provided by the external `base256emoji` crate; the dependency was
+dropped — see `CHANGELOG.md`).
 
 All dependencies are actively maintained and widely used in the Rust ecosystem.
 
@@ -190,24 +190,15 @@ If you discover a security vulnerability in the multibase crate, please report i
 
 ## Changelog of Security-Related Changes
 
-### Version 2.0.0
+### Version 1.0.1
 - Fixed Identity encoding panic risk (now uses lossy UTF-8 conversion)
 - Migrated to thiserror for better error handling
 - Added 17 security-focused tests
-- Conducted comprehensive security audit
 - Added this SECURITY.md document
 
 ### Version 1.0.0
 - Initial release with basic security considerations
 
-## Security Acknowledgments
-
-Security audits and improvements were guided by:
-- [The Definitive Guide to Rust Error Handling](https://www.howtocodeit.com/articles/the-definitive-guide-to-rust-error-handling)
-- Rust security best practices
-- OWASP guidelines for input validation
-- Industry-standard secure coding practices
-
 ## Last Updated
 
-2025-10-08
+2026-07-15

@@ -7,7 +7,7 @@ use alloc::{string::String, vec::Vec};
 #[cfg(feature = "std")]
 use std::{collections::HashMap, sync::OnceLock};
 
-/// Generates BaseCodec implementations for data-encoding-based encodings.
+/// Generates `BaseCodec` implementations for data-encoding-based encodings.
 ///
 /// This macro creates type wrappers and `BaseCodec` trait implementations for
 /// base encodings that use the `data-encoding` crate. It handles both strict
@@ -27,7 +27,7 @@ use std::{collections::HashMap, sync::OnceLock};
 ///
 /// Where:
 /// - `#[doc = "..."]` - Documentation for the generated type
-/// - `TypeName` - PascalCase name for the struct (e.g., `Base64`, `Base32Lower`)
+/// - `TypeName` - `PascalCase` name for the struct (e.g., `Base64`, `Base32Lower`)
 /// - `ENCODING_CONSTANT` - Strict encoding spec from `data-encoding` crate
 /// - `PERMISSIVE_ENCODING` - Permissive encoding spec (case-insensitive, etc.)
 ///
@@ -61,13 +61,15 @@ macro_rules! derive_base_encoding {
         $(
             #[$doc]
             #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-            pub(crate) struct $type;
+            pub struct $type;
 
             impl BaseCodec for $type {
+                #[inline]
                 fn encode<I: AsRef<[u8]>>(input: I) -> String {
                     $encoding.encode(input.as_ref())
                 }
 
+                #[inline]
                 fn decode<I: AsRef<str>>(input: I, strict: bool) -> $crate::error::Result<Vec<u8>> {
                     if strict {
                         Ok($encoding.decode(input.as_ref().as_bytes())?)
@@ -80,7 +82,7 @@ macro_rules! derive_base_encoding {
     };
 }
 
-/// Generates BaseCodec implementations for base-x-based encodings.
+/// Generates `BaseCodec` implementations for base-x-based encodings.
 ///
 /// This macro creates type wrappers and `BaseCodec` trait implementations for
 /// base encodings that use the `base-x` crate (variable-radix encodings like
@@ -100,7 +102,7 @@ macro_rules! derive_base_encoding {
 ///
 /// Where:
 /// - `#[doc = "..."]` - Documentation for the generated type
-/// - `TypeName` - PascalCase name for the struct (e.g., `Base58Btc`, `Base10`)
+/// - `TypeName` - `PascalCase` name for the struct (e.g., `Base58Btc`, `Base10`)
 /// - `ALPHABET` - Strict alphabet string for this encoding
 /// - `PERMISSIVE_ALPHABET` - Permissive alphabet (may be same as strict)
 ///
@@ -120,7 +122,7 @@ macro_rules! derive_base_encoding {
 /// }
 /// ```
 ///
-/// # Difference from derive_base_encoding
+/// # Difference from `derive_base_encoding`
 ///
 /// This macro uses `base_x::encode/decode` instead of `data-encoding`, which
 /// is appropriate for variable-radix encodings where the alphabet defines the base.
@@ -148,13 +150,15 @@ macro_rules! derive_base_x {
         $(
             #[$doc]
             #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-            pub(crate) struct $type;
+            pub struct $type;
 
             impl BaseCodec for $type {
+                #[inline]
                 fn encode<I: AsRef<[u8]>>(input: I) -> String {
                     base_x::encode($encoding, input.as_ref())
                 }
 
+                #[inline]
                 fn decode<I: AsRef<str>>(input: I, strict: bool) -> $crate::error::Result<Vec<u8>> {
                     if strict {
                         Ok(base_x::decode($encoding, input.as_ref())?)
@@ -167,7 +171,7 @@ macro_rules! derive_base_x {
     };
 }
 
-pub(crate) trait BaseCodec {
+pub trait BaseCodec {
     /// Encode with the given byte slice.
     fn encode<I: AsRef<[u8]>>(input: I) -> String;
 
@@ -191,17 +195,24 @@ pub(crate) trait BaseCodec {
 /// Invalid UTF-8 sequences are replaced with the Unicode replacement character (U+FFFD).
 /// This uses [`String::from_utf8_lossy`] to ensure the operation never panics.
 ///
+/// # Round-Trip Safety (Known Limitation)
+///
+/// Identity encoding is **not round-trip safe** for arbitrary binary data:
+/// `decode(encode(bytes)) != bytes` whenever `bytes` is not valid UTF-8,
+/// because the invalid bytes are replaced with U+FFFD on encode and never
+/// recovered on decode. Callers that need to preserve exact binary data
+/// must use a different base encoding (e.g. Base64) instead of Identity.
+///
 /// # Security Note
 ///
 /// If you need to preserve exact binary data, consider using a different base encoding
 /// like Base64 instead of Identity.
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub(crate) struct Identity;
+pub struct Identity;
 
 impl BaseCodec for Identity {
     fn encode<I: AsRef<[u8]>>(input: I) -> String {
-        // Use lossy conversion to prevent panics on invalid UTF-8
-        // This is a security improvement - the old code would panic on arbitrary binary data
+        // Lossy conversion prevents panics on invalid UTF-8 binary data.
         String::from_utf8_lossy(input.as_ref()).into_owned()
     }
 
@@ -216,9 +227,9 @@ impl BaseCodec for Identity {
     }
 }
 
-/// Base256Emoji (alphabet: 🚀🪐☄🛰🌌🌑🌒🌓🌔🌕🌖🌗🌘🌍🌏🌎🐉☀💻🖥💾💿😂❤😍🤣😊🙏💕😭😘👍😅👏😁🔥🥰💔💖💙😢🤔😆🙄💪😉☺👌🤗💜😔😎😇🌹🤦🎉💞✌✨🤷😱😌🌸🙌😋💗💚😏💛🙂💓🤩😄😀🖤😃💯🙈👇🎶😒🤭❣😜💋👀😪😑💥🙋😞😩😡🤪👊🥳😥🤤👉💃😳✋😚😝😴🌟😬🙃🍀🌷😻😓⭐✅🥺🌈😈🤘💦✔😣🏃💐☹🎊💘😠☝😕🌺🎂🌻😐🖕💝🙊😹🗣💫💀👑🎵🤞😛🔴😤🌼😫⚽🤙☕🏆🤫👈😮🙆🍻🍃🐶💁😲🌿🧡🎁⚡🌞🎈❌✊👋😰🤨😶🤝🚶💰🍓💢🤟🙁🚨💨🤬✈🎀🍺🤓😙💟🌱😖👶🥴▶➡❓💎💸⬇😨🌚🦋😷🕺⚠🙅😟😵👎🤲🤠🤧📌🔵💅🧐🐾🍒😗🤑🌊🤯🐷☎💧😯💆👆🎤🙇🍑❄🌴💣🐸💌📍🥀🤢👅💡💩👐📸👻🤐🤮🎼🥵🚩🍎🍊👼💍📣🥂)
+/// `Base256Emoji` (alphabet: 🚀🪐☄🛰🌌🌑🌒🌓🌔🌕🌖🌗🌘🌍🌏🌎🐉☀💻🖥💾💿😂❤😍🤣😊🙏💕😭😘👍😅👏😁🔥🥰💔💖💙😢🤔😆🙄💪😉☺👌🤗💜😔😎😇🌹🤦🎉💞✌✨🤷😱😌🌸🙌😋💗💚😏💛🙂💓🤩😄😀🖤😃💯🙈👇🎶😒🤭❣😜💋👀😪😑💥🙋😞😩😡🤪👊🥳😥🤤👉💃😳✋😚😝😴🌟😬🙃🍀🌷😻😓⭐✅🥺🌈😈🤘💦✔😣🏃💐☹🎊💘😠☝😕🌺🎂🌻😐🖕💝🙊😹🗣💫💀👑🎵🤞😛🔴😤🌼😫⚽🤙☕🏆🤫👈😮🙆🍻🍃🐶💁😲🌿🧡🎁⚡🌞🎈❌✊👋😰🤨😶🤝🚶💰🍓💢🤟🙁🚨💨🤬✈🎀🍺🤓😙💟🌱😖👶🥴▶➡❓💎💸⬇😨🌚🦋😷🕺⚠🙅😟😵👎🤲🤠🤧📌🔵💅🧐🐾🍒😗🤑🌊🤯🐷☎💧😯💆👆🎤🙇🍑❄🌴💣🐸💌📍🥀🤢👅💡💩👐📸👻🤐🤮🎼🥵🚩🍎🍊👼💍📣🥂)
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub(crate) struct Base256Emoji;
+pub struct Base256Emoji;
 
 const EMOJI_ALPHABET: &str = "🚀🪐☄🛰🌌🌑🌒🌓🌔🌕🌖🌗🌘🌍🌏🌎🐉☀💻🖥💾💿😂❤😍🤣😊🙏💕😭😘👍😅👏😁🔥🥰💔💖💙😢🤔😆🙄💪😉☺👌🤗💜😔😎😇🌹🤦🎉💞✌✨🤷😱😌🌸🙌😋💗💚😏💛🙂💓🤩😄😀🖤😃💯🙈👇🎶😒🤭❣😜💋👀😪😑💥🙋😞😩😡🤪👊🥳😥🤤👉💃😳✋😚😝😴🌟😬🙃🍀🌷😻😓⭐✅🥺🌈😈🤘💦✔😣🏃💐☹🎊💘😠☝😕🌺🎂🌻😐🖕💝🙊😹🗣💫💀👑🎵🤞😛🔴😤🌼😫⚽🤙☕🏆🤫👈😮🙆🍻🍃🐶💁😲🌿🧡🎁⚡🌞🎈❌✊👋😰🤨😶🤝🚶💰🍓💢🤟🙁🚨💨🤬✈🎀🍺🤓😙💟🌱😖👶🥴▶➡❓💎💸⬇😨🌚🦋😷🕺⚠🙅😟😵👎🤲🤠🤧📌🔵💅🧐🐾🍒😗🤑🌊🤯🐷☎💧😯💆👆🎤🙇🍑❄🌴💣🐸💌📍🥀🤢👅💡💩👐📸👻🤐🤮🎼🥵🚩🍎🍊👼💍📣🥂";
 
@@ -237,7 +248,7 @@ fn emoji_decode_map() -> &'static HashMap<char, u8> {
         EMOJI_ALPHABET
             .chars()
             .enumerate()
-            .map(|(index, c)| (c, index as u8))
+            .map(|(index, c)| (c, u8::try_from(index).expect("emoji alphabet fits in u8")))
             .collect()
     })
 }
@@ -358,13 +369,13 @@ derive_base_encoding! {
     Base32HexPadUpper, encoding::BASE32HEX_PAD_UPPER, encoding::BASE32HEX_PAD_UPPER_PERMISSIVE;
     /// z-base-32 (used by Tahoe-LAFS) (alphabet: ybndrfg8ejkmcpqxot1uwisza345h769).
     Base32Z, encoding::BASE32Z, encoding::BASE32Z_PERMISSIVE;
-    /// Base64, rfc4648 no padding (alphabet: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/).
+    /// Base64, `rfc4648` no padding (alphabet: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/).
     Base64, encoding::BASE64_NOPAD, encoding::BASE64_NOPAD_PERMISSIVE;
-    /// Base64, rfc4648 with padding (alphabet: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/).
+    /// Base64, `rfc4648` with padding (alphabet: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/).
     Base64Pad, encoding::BASE64_PAD, encoding::BASE64_PAD_PERMISSIVE;
-    /// Base64 url, rfc4648 no padding (alphabet: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_).
+    /// Base64 url, `rfc4648` no padding (alphabet: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_).
     Base64Url, encoding::BASE64URL_NOPAD, encoding::BASE64URL_NOPAD_PERMISSIVE;
-    /// Base64 url, rfc4648 with padding (alphabet: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_).
+    /// Base64 url, `rfc4648` with padding (alphabet: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_).
     Base64UrlPad, encoding::BASE64URL_PAD, encoding::BASE64URL_PAD_PERMISSIVE;
 }
 
@@ -379,7 +390,7 @@ derive_base_x! {
 
 /// Base36, [0-9a-z] no padding (alphabet: abcdefghijklmnopqrstuvwxyz0123456789).
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub(crate) struct Base36Lower;
+pub struct Base36Lower;
 
 impl BaseCodec for Base36Lower {
     fn encode<I: AsRef<[u8]>>(input: I) -> String {
@@ -402,7 +413,7 @@ impl BaseCodec for Base36Lower {
 
 /// Base36, [0-9A-Z] no padding (alphabet: ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789).
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
-pub(crate) struct Base36Upper;
+pub struct Base36Upper;
 
 impl BaseCodec for Base36Upper {
     fn encode<I: AsRef<[u8]>>(input: I) -> String {

@@ -2,9 +2,9 @@ use std::fmt;
 use std::io::{self, Read, Write};
 use std::str::FromStr;
 
-use anyhow::{anyhow, Context, Error, Result};
+use anyhow::{Context, Error, Result, anyhow};
 use clap::Parser;
-use multibase::Base;
+use multi_base::Base;
 
 #[derive(Parser, Debug)]
 struct Opts {
@@ -37,28 +37,26 @@ fn main() -> Result<()> {
     let opts = Opts::parse();
     match opts.mode {
         Mode::Encode { base, input } => {
-            let input_bytes = match input {
-                Some(s) => s.into_bytes(),
-                None => {
-                    let mut buf = Vec::new();
-                    io::stdin()
-                        .read_to_end(&mut buf)
-                        .context("Failed to read input from stdin")?;
-                    buf
-                }
+            let input_bytes = if let Some(s) = input {
+                s.into_bytes()
+            } else {
+                let mut buf = Vec::new();
+                io::stdin()
+                    .read_to_end(&mut buf)
+                    .context("Failed to read input from stdin")?;
+                buf
             };
             encode(base, &input_bytes)
         }
         Mode::Decode { input } => {
-            let input_str = match input {
-                Some(s) => s,
-                None => {
-                    let mut buf = String::new();
-                    io::stdin()
-                        .read_to_string(&mut buf)
-                        .context("Failed to read input from stdin")?;
-                    buf
-                }
+            let input_str = if let Some(s) = input {
+                s
+            } else {
+                let mut buf = String::new();
+                io::stdin()
+                    .read_to_string(&mut buf)
+                    .context("Failed to read input from stdin")?;
+                buf
             };
             decode(&input_str)
         }
@@ -72,7 +70,7 @@ fn main() -> Result<()> {
 #[derive(Debug, Clone)]
 struct StrBase(Base);
 
-/// Generates Display and FromStr implementations for StrBase using a single source of truth.
+/// Generates Display and `FromStr` implementations for `StrBase` using a single source of truth.
 ///
 /// This macro eliminates code duplication by defining the Base ↔ string mappings once
 /// and generating both trait implementations from that definition.
@@ -142,9 +140,9 @@ impl From<StrBase> for Base {
 }
 
 fn encode(base: StrBase, input: &[u8]) -> Result<()> {
-    log::debug!("Encode {:?} with {}", input, base);
-    let result = multibase::encode(base.into(), input);
-    print!("{}", result);
+    log::debug!("Encode {input:?} with {base}");
+    let result = multi_base::encode(base.into(), input);
+    print!("{result}");
     io::stdout()
         .flush()
         .context("Failed to write encoded output to stdout")?;
@@ -152,11 +150,11 @@ fn encode(base: StrBase, input: &[u8]) -> Result<()> {
 }
 
 fn decode(input: &str) -> Result<()> {
-    log::debug!("Decode {:?}", input);
-    let (detected_base, result) = multibase::decode(input, true)
+    log::debug!("Decode {input:?}");
+    let (detected_base, result) = multi_base::decode(input, true)
         .context("Failed to decode input. Make sure it starts with a valid multibase prefix")?;
 
-    log::debug!("Detected base: {:?}", detected_base);
+    log::debug!("Detected base: {detected_base:?}");
     io::stdout()
         .write_all(&result)
         .context("Failed to write decoded output to stdout")?;

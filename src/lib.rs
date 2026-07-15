@@ -5,6 +5,12 @@
 //! Implementation of [multibase](https://github.com/multiformats/multibase) in Rust.
 
 #![deny(missing_docs)]
+#![deny(unsafe_code)]
+// The `build_base_enum!` macro generates doc comments containing base alphabet
+// strings (e.g. `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/`)
+// and variant names like `Base256Emoji`, which clippy::doc_markdown flags. These
+// are intentional alphabet literals, not identifiers requiring backticks.
+#![allow(clippy::doc_markdown)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(not(feature = "std"))]
@@ -35,6 +41,14 @@ pub use self::error::{Error, Result};
 ///     (Base::Base58Btc, b"hello".to_vec())
 /// );
 /// ```
+///
+/// # Errors
+///
+/// Returns an error if:
+/// - The input string is empty ([`Error::EmptyInput`])
+/// - The base code prefix is unknown ([`Error::UnknownBase`])
+/// - The encoded data is invalid for the detected base
+#[inline]
 pub fn decode<T: AsRef<str>>(input: T, strict: bool) -> Result<(Base, Vec<u8>)> {
     let input = input.as_ref();
     let code = input.chars().next().ok_or(Error::EmptyInput)?;
@@ -58,6 +72,7 @@ pub fn decode<T: AsRef<str>>(input: T, strict: bool) -> Result<(Base, Vec<u8>)> 
 /// This function pre-allocates the exact capacity needed and constructs the
 /// result string efficiently by prepending the base code without requiring
 /// reallocation or memory moves.
+#[inline]
 pub fn encode<T: AsRef<[u8]>>(base: Base, input: T) -> String {
     let input = input.as_ref();
     let encoded = base.encode(input);
@@ -99,6 +114,7 @@ pub fn encode<T: AsRef<[u8]>>(base: Base, input: T) -> String {
 /// When encoding many values, this function can be significantly faster than
 /// [`encode`] as it reuses the allocated buffer instead of allocating a new
 /// String for each encoding operation.
+#[inline]
 pub fn encode_into<T: AsRef<[u8]>>(base: Base, input: T, buffer: &mut String) {
     let input = input.as_ref();
     let encoded = base.encode(input);
@@ -148,6 +164,7 @@ pub fn encode_into<T: AsRef<[u8]>>(base: Base, input: T, buffer: &mut String) {
 /// - The input string is empty
 /// - The base code prefix is unknown
 /// - The encoded data is invalid for the specified base
+#[inline]
 pub fn decode_into<T: AsRef<str>>(input: T, strict: bool, buffer: &mut Vec<u8>) -> Result<Base> {
     let input = input.as_ref();
     let code = input.chars().next().ok_or(Error::EmptyInput)?;
@@ -179,11 +196,16 @@ pub fn decode_into<T: AsRef<str>>(input: T, strict: bool, buffer: &mut Vec<u8>) 
 ///
 /// This function has the same performance characteristics as [`encode`].
 /// The validation overhead is negligible (just checking the base code).
+///
+/// # Panics
+///
+/// Panics if the encoded string fails validation. Since [`encode`] always
+/// produces a valid multibase string, this is unreachable in practice.
+#[inline]
 pub fn encode_to_validated<T: AsRef<[u8]>>(base: Base, input: T) -> EncodedString {
     let encoded_str = encode(base, input);
-    // SAFETY: We just encoded this with a valid base, so it must be valid
-    // This unwrap is safe and will never panic
-    EncodedString::new(encoded_str).expect("freshly encoded string must be valid")
+    // The string was just produced by `encode`, so the prefix is always valid.
+    EncodedString::new(encoded_str).expect("encoded string has a valid base prefix")
 }
 
 /// Parse a multibase string into a validated `EncodedString`.
@@ -205,6 +227,7 @@ pub fn encode_to_validated<T: AsRef<[u8]>>(base: Base, input: T) -> EncodedStrin
 /// Returns an error if:
 /// - The input string is empty
 /// - The base code prefix is unknown
+#[inline]
 pub fn parse_encoded<T: AsRef<str>>(input: T) -> Result<EncodedString> {
     EncodedString::new(input.as_ref())
 }

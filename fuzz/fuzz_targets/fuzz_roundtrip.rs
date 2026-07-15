@@ -1,7 +1,7 @@
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
-use multibase::Base;
+use multi_base::Base;
 
 fuzz_target!(|data: &[u8]| {
     // Test round-trip property: decode(encode(x)) should equal x (for valid UTF-8 in Identity)
@@ -41,10 +41,10 @@ fuzz_target!(|data: &[u8]| {
 
     for base in &bases {
         // Encode the data
-        let encoded = multibase::encode(*base, limited_data);
+        let encoded = multi_base::encode(*base, limited_data);
 
         // Decode it back
-        if let Ok((decoded_base, decoded_data)) = multibase::decode(&encoded, true) {
+        if let Ok((decoded_base, decoded_data)) = multi_base::decode(&encoded, true) {
             // Base should match
             assert_eq!(decoded_base, *base);
 
@@ -56,10 +56,10 @@ fuzz_target!(|data: &[u8]| {
 
         // Test with buffer reuse
         let mut encode_buffer = String::new();
-        multibase::encode_into(*base, limited_data, &mut encode_buffer);
+        multi_base::encode_into(*base, limited_data, &mut encode_buffer);
 
         let mut decode_buffer = Vec::new();
-        if let Ok(decoded_base) = multibase::decode_into(&encode_buffer, true, &mut decode_buffer) {
+        if let Ok(decoded_base) = multi_base::decode_into(&encode_buffer, true, &mut decode_buffer) {
             assert_eq!(decoded_base, *base);
 
             if *base != Base::Identity || std::str::from_utf8(limited_data).is_ok() {

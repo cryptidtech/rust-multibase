@@ -4,15 +4,32 @@ version = "0.1.0"
 authors = [
     "David Craven <david@craven.ch>",
     "Qinxuan Chen <koushiro.cqx@gmail.com>",
+    "Dave Grantham <dwg@linuxprogrammer.org>",
 ]
-edition = "2021"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT"
+description = "Command-line multibase encoder/decoder"
+repository = "https://github.com/cryptidtech/multi-base.git"
+keywords = ["multibase", "multiformats", "cli"]
+categories = ["command-line-utilities", "encoding"]
 
 [dependencies]
 anyhow = "1.0"
 clap = { version = "4", features = ["derive"] }
 env_logger = "0.11"
 log = "0.4"
-multibase = { path = ".." }
+multi-base = { path = ".." }
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+# The CLI is an unpublished binary tool; it has no standalone README.
+cargo_common_metadata = { level = "allow", priority = 1 }
+
+[lints.rust]
+unsafe_code = "deny"
 
 [[bin]]
 name = "multibase"

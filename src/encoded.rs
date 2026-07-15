@@ -123,7 +123,9 @@ impl EncodedString {
     /// let encoded = EncodedString::new("md29ybGQ").unwrap();
     /// assert_eq!(encoded.base(), Base::Base64);
     /// ```
-    pub fn base(&self) -> Base {
+    #[inline]
+    #[must_use]
+    pub const fn base(&self) -> Base {
         self.base
     }
 
@@ -137,6 +139,8 @@ impl EncodedString {
     /// let encoded = EncodedString::new("zCn8eVZg").unwrap();
     /// assert_eq!(encoded.as_str(), "zCn8eVZg");
     /// ```
+    #[inline]
+    #[must_use]
     pub fn as_str(&self) -> &str {
         &self.inner
     }
@@ -160,6 +164,7 @@ impl EncodedString {
     /// # Errors
     ///
     /// Returns an error if the encoded data is malformed for the detected base.
+    #[inline]
     pub fn decode(&self) -> Result<Vec<u8>> {
         let code_len = self.base.code().len_utf8();
         self.base.decode(&self.inner[code_len..], true)
@@ -184,6 +189,7 @@ impl EncodedString {
     /// # Errors
     ///
     /// Returns an error if the encoded data is malformed for the detected base.
+    #[inline]
     pub fn decode_with_strictness(&self, strict: bool) -> Result<Vec<u8>> {
         let code_len = self.base.code().len_utf8();
         self.base.decode(&self.inner[code_len..], strict)
@@ -200,6 +206,7 @@ impl EncodedString {
     /// let inner = encoded.into_inner();
     /// assert_eq!(inner, "zCn8eVZg");
     /// ```
+    #[must_use]
     pub fn into_inner(self) -> String {
         self.inner
     }
@@ -316,7 +323,7 @@ mod tests {
     #[test]
     fn test_display() {
         let encoded = EncodedString::new("zCn8eVZg").unwrap();
-        assert_eq!(format!("{}", encoded), "zCn8eVZg");
+        assert_eq!(format!("{encoded}"), "zCn8eVZg");
     }
 
     #[test]

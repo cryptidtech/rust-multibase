@@ -5,7 +5,7 @@
 //! These tests verify that the library handles potentially malicious or
 //! adversarial inputs safely without panicking or exhibiting undefined behavior.
 
-use multi_base::{decode, decode_into, encode, encode_into, Base};
+use multi_base::{Base, decode, decode_into, encode, encode_into};
 
 /// Tests that very large inputs don't cause panics or undefined behavior.
 #[test]
@@ -62,11 +62,7 @@ fn test_single_byte_maximum() {
                 continue;
             }
 
-            assert_eq!(
-                decoded, input,
-                "Failed for base {:?} with byte {}",
-                base, byte
-            );
+            assert_eq!(decoded, input, "Failed for base {base:?} with byte {byte}");
         }
     }
 }
@@ -97,7 +93,7 @@ fn test_malformed_prefix_rejection() {
 
     for input in invalid_prefixes {
         let result = decode(input, true);
-        assert!(result.is_err(), "Should reject invalid prefix: {}", input);
+        assert!(result.is_err(), "Should reject invalid prefix: {input}");
     }
 }
 
@@ -125,18 +121,15 @@ fn test_prefix_only_inputs() {
     let prefixes = vec!['m', 'z', 'f', 'b', 'u'];
 
     for prefix in prefixes {
-        let prefix_only = format!("{}", prefix);
+        let prefix_only = format!("{prefix}");
         let result = decode(&prefix_only, true);
 
         // Should either decode to empty or error, but not panic
-        match result {
-            Ok((_, data)) => {
-                // Empty data is acceptable
-                assert_eq!(data.len(), 0);
-            }
-            Err(_) => {
-                // Error is also acceptable
-            }
+        if let Ok((_, data)) = result {
+            // Empty data is acceptable
+            assert_eq!(data.len(), 0);
+        } else {
+            // Error is also acceptable
         }
     }
 }
@@ -190,7 +183,7 @@ fn test_concurrent_safety() {
     let handles: Vec<_> = (0..10)
         .map(|i| {
             thread::spawn(move || {
-                let data = format!("thread {}", i);
+                let data = format!("thread {i}");
                 for base in all_bases() {
                     let encoded = encode(base, data.as_bytes());
                     let (_, decoded) = decode(&encoded, true).unwrap();
@@ -285,7 +278,7 @@ fn test_all_error_paths() {
     assert!(decode("m!!!!", true).is_err()); // Invalid Base64
 }
 
-/// Tests that EncodedString validation is secure.
+/// Tests that `EncodedString` validation is secure.
 #[test]
 fn test_encoded_string_security() {
     use multi_base::EncodedString;

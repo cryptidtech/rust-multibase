@@ -3,7 +3,9 @@
 // These tests verify invariants that should hold for all inputs,
 // using randomly generated test data.
 
-use multi_base::{decode, decode_into, encode, encode_into, Base};
+#![allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+
+use multi_base::{Base, decode, decode_into, encode, encode_into};
 use proptest::prelude::*;
 
 // Configure proptest to run fewer cases for faster tests
@@ -254,7 +256,7 @@ fn test_all_bytes_in_various_bases() {
     for base in all_bases() {
         let encoded = encode(base, &all_bytes);
         let (decoded_base, decoded) =
-            decode(&encoded, true).unwrap_or_else(|_| panic!("decode failed for {:?}", base));
+            decode(&encoded, true).unwrap_or_else(|_| panic!("decode failed for {base:?}"));
         assert_eq!(base, decoded_base);
         assert_eq!(all_bytes, decoded);
     }
@@ -271,12 +273,12 @@ fn test_large_data_roundtrip() {
         assert_eq!(base, decoded_base);
         assert_eq!(large_data.len(), decoded.len());
         assert_eq!(large_data[..1000], decoded[..1000]); // Check first 1KB
-        assert_eq!(large_data[999000..], decoded[999000..]); // Check last 1KB
+        assert_eq!(large_data[999_000..], decoded[999_000..]); // Check last 1KB
     }
 }
 
 #[test]
-#[ignore] // Very slow - run with: cargo test test_base58_large_data -- --ignored
+#[ignore = "very slow - run with: cargo test test_base58_large_data -- --ignored"]
 fn test_base58_large_data() {
     // Test Base58 with 1MB (this is slow, hence ignored by default)
     let large_data: Vec<u8> = (0..1_000_000).map(|i| (i % 256) as u8).collect();

@@ -1,14 +1,14 @@
 use std::hint::black_box;
 
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use rand::Rng;
 
-use multi_base::{decode, decode_into, encode, encode_into, encode_to_validated, Base};
+use multi_base::{Base, decode, decode_into, encode, encode_into, encode_to_validated};
 
 fn bench_encode(c: &mut Criterion) {
     let mut rng = rand::thread_rng();
-    let data_large: Vec<u8> = (0..1024).map(|_| rng.gen()).collect();
-    let data_small: Vec<u8> = (0..32).map(|_| rng.gen()).collect();
+    let data_large: Vec<u8> = (0..1024).map(|_| rng.r#gen()).collect();
+    let data_small: Vec<u8> = (0..32).map(|_| rng.r#gen()).collect();
 
     let mut group = c.benchmark_group("encode");
 
@@ -16,34 +16,34 @@ fn bench_encode(c: &mut Criterion) {
     group.bench_function("base32_large", |b| {
         b.iter(|| {
             let _ = black_box(encode(Base::Base32Upper, &data_large));
-        })
+        });
     });
     group.bench_function("base58btc_large", |b| {
         b.iter(|| {
             let _ = black_box(encode(Base::Base58Btc, &data_large));
-        })
+        });
     });
     group.bench_function("base64_large", |b| {
         b.iter(|| {
             let _ = black_box(encode(Base::Base64, &data_large));
-        })
+        });
     });
 
     // Small data benchmarks (32 bytes) - shows insert(0) impact more clearly
     group.bench_function("base32_small", |b| {
         b.iter(|| {
             let _ = black_box(encode(Base::Base32Upper, &data_small));
-        })
+        });
     });
     group.bench_function("base58btc_small", |b| {
         b.iter(|| {
             let _ = black_box(encode(Base::Base58Btc, &data_small));
-        })
+        });
     });
     group.bench_function("base64_small", |b| {
         b.iter(|| {
             let _ = black_box(encode(Base::Base64, &data_small));
-        })
+        });
     });
 
     group.finish();
@@ -51,7 +51,7 @@ fn bench_encode(c: &mut Criterion) {
 
 fn bench_decode(c: &mut Criterion) {
     let mut rng = rand::thread_rng();
-    let data: Vec<usize> = (0..1024).map(|_| rng.gen::<u32>() as usize).collect();
+    let data: Vec<usize> = (0..1024).map(|_| rng.r#gen::<u32>() as usize).collect();
 
     let base32 = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
     let base58 = b"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
@@ -77,17 +77,17 @@ fn bench_decode(c: &mut Criterion) {
     group.bench_function("base32", |b| {
         b.iter(|| {
             let _ = black_box(decode(&base32_data, false).unwrap());
-        })
+        });
     });
     group.bench_function("base58btc", |b| {
         b.iter(|| {
             let _ = black_box(decode(&base58_data, false).unwrap());
-        })
+        });
     });
     group.bench_function("base64", |b| {
         b.iter(|| {
             let _ = black_box(decode(&base64_data, false).unwrap());
-        })
+        });
     });
     group.finish();
 }
@@ -95,20 +95,20 @@ fn bench_decode(c: &mut Criterion) {
 // Benchmark zero-copy encode_into API
 fn bench_encode_into(c: &mut Criterion) {
     let mut rng = rand::thread_rng();
-    let data: Vec<u8> = (0..1024).map(|_| rng.gen()).collect();
+    let data: Vec<u8> = (0..1024).map(|_| rng.r#gen()).collect();
 
     let mut group = c.benchmark_group("encode_into");
 
     for base in &[Base::Base16Lower, Base::Base32Lower, Base::Base64] {
         group.bench_with_input(
-            BenchmarkId::from_parameter(format!("{:?}", base)),
+            BenchmarkId::from_parameter(format!("{base:?}")),
             base,
             |b, &base| {
                 let mut buffer = String::new();
                 b.iter(|| {
                     encode_into(black_box(base), black_box(&data), &mut buffer);
                     black_box(&buffer);
-                })
+                });
             },
         );
     }
@@ -119,7 +119,7 @@ fn bench_encode_into(c: &mut Criterion) {
 // Benchmark zero-copy decode_into API
 fn bench_decode_into(c: &mut Criterion) {
     let mut rng = rand::thread_rng();
-    let data: Vec<u8> = (0..1024).map(|_| rng.gen()).collect();
+    let data: Vec<u8> = (0..1024).map(|_| rng.r#gen()).collect();
 
     let encoded_base16 = encode(Base::Base16Lower, &data);
     let encoded_base32 = encode(Base::Base32Lower, &data);
@@ -132,7 +132,7 @@ fn bench_decode_into(c: &mut Criterion) {
         b.iter(|| {
             let _ = black_box(decode_into(&encoded_base16, false, &mut buffer).unwrap());
             black_box(&buffer);
-        })
+        });
     });
 
     group.bench_function("base32_lower", |b| {
@@ -140,7 +140,7 @@ fn bench_decode_into(c: &mut Criterion) {
         b.iter(|| {
             let _ = black_box(decode_into(&encoded_base32, false, &mut buffer).unwrap());
             black_box(&buffer);
-        })
+        });
     });
 
     group.bench_function("base64", |b| {
@@ -148,7 +148,7 @@ fn bench_decode_into(c: &mut Criterion) {
         b.iter(|| {
             let _ = black_box(decode_into(&encoded_base64, false, &mut buffer).unwrap());
             black_box(&buffer);
-        })
+        });
     });
 
     group.finish();
@@ -157,7 +157,7 @@ fn bench_decode_into(c: &mut Criterion) {
 // Benchmark roundtrip operations
 fn bench_roundtrip(c: &mut Criterion) {
     let mut rng = rand::thread_rng();
-    let data: Vec<u8> = (0..256).map(|_| rng.gen()).collect();
+    let data: Vec<u8> = (0..256).map(|_| rng.r#gen()).collect();
 
     let mut group = c.benchmark_group("roundtrip");
 
@@ -168,14 +168,14 @@ fn bench_roundtrip(c: &mut Criterion) {
         Base::Base64,
     ] {
         group.bench_with_input(
-            BenchmarkId::from_parameter(format!("{:?}", base)),
+            BenchmarkId::from_parameter(format!("{base:?}")),
             base,
             |b, &base| {
                 b.iter(|| {
                     let encoded = encode(black_box(base), black_box(&data));
                     let (decoded_base, decoded_data) = decode(black_box(&encoded), false).unwrap();
                     black_box((decoded_base, decoded_data));
-                })
+                });
             },
         );
     }
@@ -191,12 +191,12 @@ fn bench_data_sizes(c: &mut Criterion) {
     let mut group = c.benchmark_group("data_sizes");
 
     for size in sizes {
-        let data: Vec<u8> = (0..size).map(|_| rng.gen()).collect();
+        let data: Vec<u8> = (0..size).map(|_| rng.r#gen()).collect();
 
         group.bench_with_input(BenchmarkId::new("base64_encode", size), &data, |b, data| {
             b.iter(|| {
                 let _ = black_box(encode(Base::Base64, black_box(data)));
-            })
+            });
         });
     }
 
@@ -206,7 +206,7 @@ fn bench_data_sizes(c: &mut Criterion) {
 // Benchmark all base types
 fn bench_all_bases(c: &mut Criterion) {
     let mut rng = rand::thread_rng();
-    let data: Vec<u8> = (0..128).map(|_| rng.gen()).collect();
+    let data: Vec<u8> = (0..128).map(|_| rng.r#gen()).collect();
 
     let bases = vec![
         Base::Base2,
@@ -227,12 +227,12 @@ fn bench_all_bases(c: &mut Criterion) {
 
     for base in bases {
         group.bench_with_input(
-            BenchmarkId::from_parameter(format!("{:?}", base)),
+            BenchmarkId::from_parameter(format!("{base:?}")),
             &base,
             |b, &base| {
                 b.iter(|| {
                     let _ = black_box(encode(black_box(base), black_box(&data)));
-                })
+                });
             },
         );
     }
@@ -243,7 +243,7 @@ fn bench_all_bases(c: &mut Criterion) {
 // Benchmark EncodedString operations
 fn bench_encoded_string(c: &mut Criterion) {
     let mut rng = rand::thread_rng();
-    let data: Vec<u8> = (0..256).map(|_| rng.gen()).collect();
+    let data: Vec<u8> = (0..256).map(|_| rng.r#gen()).collect();
 
     let mut group = c.benchmark_group("encoded_string");
 
@@ -251,7 +251,7 @@ fn bench_encoded_string(c: &mut Criterion) {
     group.bench_function("encode_to_validated", |b| {
         b.iter(|| {
             let _ = black_box(encode_to_validated(Base::Base64, black_box(&data)));
-        })
+        });
     });
 
     // Benchmark EncodedString::new (parsing)
@@ -259,7 +259,7 @@ fn bench_encoded_string(c: &mut Criterion) {
     group.bench_function("parse", |b| {
         b.iter(|| {
             let _ = black_box(multi_base::parse_encoded(black_box(&encoded_str)).unwrap());
-        })
+        });
     });
 
     // Benchmark EncodedString::decode
@@ -267,7 +267,7 @@ fn bench_encoded_string(c: &mut Criterion) {
     group.bench_function("decode", |b| {
         b.iter(|| {
             let _ = black_box(encoded.decode().unwrap());
-        })
+        });
     });
 
     group.finish();
@@ -281,12 +281,12 @@ fn bench_base_from_code(c: &mut Criterion) {
 
     for code in codes {
         group.bench_with_input(
-            BenchmarkId::from_parameter(format!("'{}'", code)),
+            BenchmarkId::from_parameter(format!("'{code}'")),
             &code,
             |b, &code| {
                 b.iter(|| {
                     let _ = black_box(Base::from_code(black_box(code)).unwrap());
-                })
+                });
             },
         );
     }
@@ -297,14 +297,14 @@ fn bench_base_from_code(c: &mut Criterion) {
 // Benchmark comparison: encode vs encode_into
 fn bench_encode_comparison(c: &mut Criterion) {
     let mut rng = rand::thread_rng();
-    let data: Vec<u8> = (0..1024).map(|_| rng.gen()).collect();
+    let data: Vec<u8> = (0..1024).map(|_| rng.r#gen()).collect();
 
     let mut group = c.benchmark_group("encode_comparison");
 
     group.bench_function("encode", |b| {
         b.iter(|| {
             let _ = black_box(encode(Base::Base64, black_box(&data)));
-        })
+        });
     });
 
     group.bench_function("encode_into", |b| {
@@ -312,7 +312,7 @@ fn bench_encode_comparison(c: &mut Criterion) {
         b.iter(|| {
             encode_into(Base::Base64, black_box(&data), &mut buffer);
             black_box(&buffer);
-        })
+        });
     });
 
     // Simulate real-world scenario: encoding multiple values in a loop
@@ -321,7 +321,7 @@ fn bench_encode_comparison(c: &mut Criterion) {
             for _ in 0..10 {
                 let _ = black_box(encode(Base::Base64, black_box(&data)));
             }
-        })
+        });
     });
 
     group.bench_function("encode_into_loop_10", |b| {
@@ -331,7 +331,7 @@ fn bench_encode_comparison(c: &mut Criterion) {
                 encode_into(Base::Base64, black_box(&data), &mut buffer);
                 black_box(&buffer);
             }
-        })
+        });
     });
 
     group.finish();

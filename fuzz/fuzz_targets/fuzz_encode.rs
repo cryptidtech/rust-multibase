@@ -1,7 +1,7 @@
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
-use multibase::Base;
+use multi_base::Base;
 
 fuzz_target!(|data: &[u8]| {
     // Test encoding with all base types
@@ -41,18 +41,18 @@ fuzz_target!(|data: &[u8]| {
 
     for base in &bases {
         // Test regular encoding
-        let encoded = multibase::encode(*base, limited_data);
+        let encoded = multi_base::encode(*base, limited_data);
 
         // Verify it starts with a valid prefix
         assert!(!encoded.is_empty());
 
         // Test encode_into
         let mut buffer = String::new();
-        multibase::encode_into(*base, limited_data, &mut buffer);
+        multi_base::encode_into(*base, limited_data, &mut buffer);
         assert!(!buffer.is_empty());
 
         // Test encode_to_validated
-        let validated = multibase::encode_to_validated(*base, limited_data);
+        let validated = multi_base::encode_to_validated(*base, limited_data);
         assert_eq!(validated.base(), *base);
     }
 

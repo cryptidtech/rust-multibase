@@ -1,6 +1,6 @@
 [package]
 name = "multi-base"
-version = "1.0.2"
+version = "1.0.3"
 authors = ["Friedel Ziegelmayer <dignifiedquire@gmail.com>", "Dave Grantham <dwg@linuxprogrammer.org>"]
 edition = "2024"
 rust-version = "1.85"

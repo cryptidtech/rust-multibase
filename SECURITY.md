@@ -59,7 +59,7 @@ fn safe_decode(input: &str) -> Result<(Base, Vec<u8>), Error> {
     if input.len() > MAX_INPUT_SIZE {
         return Err(Error::InvalidBaseString); // or custom error
     }
-    multibase::decode(input, true)
+    multi_base::decode(input, true)
 }
 ```
 
@@ -68,7 +68,7 @@ fn safe_decode(input: &str) -> Result<(Base, Vec<u8>), Error> {
 Always handle errors properly and avoid exposing detailed error messages to untrusted parties:
 
 ```rust
-match multibase::decode(untrusted_input, true) {
+match multi_base::decode(untrusted_input, true) {
     Ok((base, data)) => {
         // Process data
     }
@@ -89,10 +89,10 @@ The Identity encoding (`\0` prefix) uses lossy UTF-8 conversion:
 
 ```rust
 // For exact binary data preservation, use Base64 or Base58
-let encoded = multibase::encode(Base::Base64, binary_data);
+let encoded = multi_base::encode(Base::Base64, binary_data);
 
 // Identity is only appropriate for UTF-8 text
-let text_encoded = multibase::encode(Base::Identity, "valid utf-8 text".as_bytes());
+let text_encoded = multi_base::encode(Base::Identity, "valid utf-8 text".as_bytes());
 ```
 
 ### 4. Strict vs Permissive Decoding
@@ -101,10 +101,10 @@ Use strict decoding (`true`) for untrusted input to ensure stricter validation:
 
 ```rust
 // For untrusted input, always use strict mode
-let (base, data) = multibase::decode(untrusted, true)?;
+let (base, data) = multi_base::decode(untrusted, true)?;
 
 // Permissive mode allows case-insensitive decoding for some bases
-let (base, data) = multibase::decode(trusted, false)?;
+let (base, data) = multi_base::decode(trusted, false)?;
 ```
 
 ## Security Testing

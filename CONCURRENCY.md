@@ -118,7 +118,7 @@ let handles: Vec<_> = (0..10)
     .map(|_| {
         let d = data.clone();
         thread::spawn(move || {
-            multibase::encode(Base::Base64, &d)
+            multi_base::encode(Base::Base64, &d)
         })
     })
     .collect();
@@ -140,7 +140,7 @@ let handles: Vec<_> = (0..10)
     .map(|_| {
         let e = Arc::clone(&encoded);
         thread::spawn(move || {
-            multibase::decode(&*e, true)
+            multi_base::decode(&*e, true)
         })
     })
     .collect();
@@ -164,8 +164,8 @@ let handles: Vec<_> = (0..10)
             let mut decode_buffer = Vec::new();
 
             for _ in 0..100 {
-                multibase::encode_into(Base::Base64, b"data", &mut encode_buffer);
-                multibase::decode_into(&encode_buffer, true, &mut decode_buffer).unwrap();
+                multi_base::encode_into(Base::Base64, b"data", &mut encode_buffer);
+                multi_base::decode_into(&encode_buffer, true, &mut decode_buffer).unwrap();
             }
         })
     })
@@ -215,7 +215,7 @@ let handles: Vec<_> = (0..10)
     .map(|_| {
         thread::spawn(move || {
             let mut buf = shared_buffer.lock().unwrap();
-            multibase::encode_into(Base::Base64, b"data", &mut buf);
+            multi_base::encode_into(Base::Base64, b"data", &mut buf);
         })
     })
     .collect();

@@ -1,6 +1,11 @@
 name: build
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -113,3 +118,46 @@ jobs:
 
       - name: Upload Code Coverage
         uses: codecov/codecov-action@v5
+
+  fuzz:
+    name: Fuzz
+    runs-on: ubuntu-latest
+    # Bounded fuzzing is expensive. Only run on schedule or manual dispatch
+    # to avoid exhausting CI minutes; regular push/PR CI already covers
+    # fmt, clippy, audit, MSRV, no_std, and coverage.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout Sources
+        uses: actions/checkout@v5
+
+      - name: Install Rust Toolchain (nightly)
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Cache Dependencies & Build Outputs
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo
+            target
+            fuzz/target
+          key: ${{ runner.os }}-fuzz-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz
+        shell: bash
+
+      - name: Run fuzz_decode (60s)
+        run: cargo fuzz run fuzz_decode -- -max_total_time=60
+        working-directory: fuzz
+        shell: bash
+
+      - name: Run fuzz_encode (60s)
+        run: cargo fuzz run fuzz_encode -- -max_total_time=60
+        working-directory: fuzz
+        shell: bash
+
+      - name: Run fuzz_roundtrip (60s)
+        run: cargo fuzz run fuzz_roundtrip -- -max_total_time=60
+        working-directory: fuzz
+        shell: bash

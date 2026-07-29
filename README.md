@@ -1,21 +1,20 @@
 # multi-base
 
-[![](https://img.shields.io/badge/made%20by-Protocol%20Labs-blue.svg?style=flat-square)](http://ipn.io)
+[![](https://img.shields.io/badge/made%20by-Cryptid%20Technologies-gold.svg?style=flat-square)](https://cryptid.tech/)
 [![](https://img.shields.io/badge/project-multiformats-blue.svg?style=flat-square)](https://github.com/multiformats/multiformats)
-[![](https://img.shields.io/badge/freenode-%23ipfs-blue.svg?style=flat-square)](https://webchat.freenode.net/?channels=%23ipfs)
-[![](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
 
 [![Build Status](https://github.com/cryptidtech/multi-base/workflows/build/badge.svg)](https://github.com/cryptidtech/multi-base/actions)
 [![License](https://img.shields.io/crates/l/multi-base?style=flat-square)](LICENSE)
 [![Crates.io](https://img.shields.io/crates/v/multi-base?style=flat-square)](https://crates.io/crates/multi-base)
 [![Documentation](https://docs.rs/multi-base/badge.svg?style=flat-square)](https://docs.rs/multi-base)
-[![Dependency Status](https://deps.rs/repo/github/cryptidtech/multi-base/status.svg)](https://deps.rs/repo/github/cryptidtech/multi-base)
 [![Coverage Status](https://img.shields.io/codecov/c/github/cryptidtech/multi-base?style=flat-square)](https://codecov.io/gh/cryptidtech/multi-base)
 
-> [multibase](https://github.com/multiformats/multibase) implementation in Rust.
+A [multibase](https://github.com/multiformats/multibase) implementation in
+Rust. The crate gives encoding and decoding with error handling, type safety,
+and `no_std` support.
 
-A multibase encoding/decoding library with error handling, type safety, and
-`no_std` support.
+The crate is published as `multi-base` on crates.io. Import it as
+`multi_base` in Rust.
 
 ## Table of Contents
 
@@ -38,43 +37,19 @@ A multibase encoding/decoding library with error handling, type safety, and
 
 ## Features
 
-✨ **Stable**
-- 142 tests (unit, integration, property-based, security, concurrency)
-- Zero clippy warnings
-- Thread safety verification
-- `#![deny(unsafe_code)]`
-
-🚀 **Performance**
-- Zero-copy buffer reuse APIs
-- `#[inline]` on hot encode/decode paths
-- Pre-allocated exact-capacity encoding
-
-🔒 **Type Safety**
-- Validated `EncodedString` newtype
-- "Parse, don't validate" pattern
-- Compile-time guarantees
-
-🛡️ **Security**
-- No panics on untrusted input
-- `#![deny(unsafe_code)]` enforced
-- Fuzzing infrastructure
-- Input validation at all boundaries
-
-🧵 **Thread Safe**
-- All types are Send + Sync
-- No interior mutability
-- Verified with concurrent stress tests
-
-📚 **Documented**
-- API documentation with examples
-- Security and concurrency guides
-- [CHANGELOG.md](CHANGELOG.md) with migration notes
-
-🌐 **Flexible**
-- 24 supported base encodings
-- Strict and permissive decoding modes
-- `no_std` support with `alloc`
-- WebAssembly compatible
+- 24 base encodings.
+- Zero-copy buffer reuse APIs: `encode_into` and `decode_into`.
+- `#[inline]` on hot encode and decode paths.
+- Pre-allocated exact-capacity encoding.
+- Validated `EncodedString` newtype. Parse, do not validate.
+- `#![deny(unsafe_code)]` set at the crate root.
+- No panics on untrusted input.
+- Fuzzing infrastructure with `cargo-fuzz`.
+- All types are `Send + Sync`. No interior mutability.
+- `no_std` support with `alloc`.
+- WebAssembly compatible.
+- 142 tests: unit, integration, property-based, security, concurrency, and
+  documentation tests.
 
 ## Install
 
@@ -82,20 +57,17 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-multi-base = "1.0"
+multi-base = "1.1"
 ```
 
 For `no_std` environments:
 
 ```toml
 [dependencies]
-multi-base = { version = "1.0", default-features = false }
+multi-base = { version = "1.1", default-features = false }
 ```
 
-> **Note:** the crate is published as `multi-base` on crates.io and imported
-> as `multi_base` in Rust. The current published version is `1.0.1`.
-
-**MSRV**: Rust 1.85 (Edition 2024)
+MSRV: Rust 1.85 (Edition 2024).
 
 ## Usage
 
@@ -116,7 +88,8 @@ assert_eq!(data, b"hello world");
 
 ### Buffer Reuse for Performance
 
-When encoding/decoding multiple values, reuse buffers to avoid allocations:
+When you encode or decode multiple values, reuse buffers to avoid
+allocations:
 
 ```rust
 use multi_base::{Base, encode_into, decode_into};
@@ -125,13 +98,13 @@ let mut encode_buffer = String::new();
 let mut decode_buffer = Vec::new();
 
 for data in dataset {
-    // Encode into existing buffer (no allocation)
+    // Encode into the existing buffer. No allocation.
     encode_into(Base::Base64, data, &mut encode_buffer);
 
-    // Decode into existing buffer (no allocation)
+    // Decode into the existing buffer. No allocation.
     let base = decode_into(&encode_buffer, true, &mut decode_buffer)?;
 
-    // Process decoded data...
+    // Process the decoded data.
 }
 ```
 
@@ -145,7 +118,7 @@ use multi_base::{EncodedString, Base};
 // Parse and validate at construction
 let encoded = EncodedString::new("zCn8eVZg")?;
 
-// Base is known at compile time
+// The base is known at compile time
 assert_eq!(encoded.base(), Base::Base58Btc);
 
 // Decode directly
@@ -158,7 +131,7 @@ let encoded: EncodedString = "md29ybGQ".parse()?;
 
 ### Error Handling
 
-The library provides comprehensive error types with context:
+The crate gives error types with context:
 
 ```rust
 use multi_base::{decode, Error};
@@ -184,7 +157,7 @@ match decode(input, true) {
 
 ## Supported Bases
 
-The library supports 24 base encodings:
+The crate supports 24 base encodings:
 
 | Base | Code | Alphabet |
 |------|------|----------|
@@ -215,40 +188,45 @@ The library supports 24 base encodings:
 
 ## Performance
 
-**Encoding Performance**: Base32 and Base64 are orders of magnitude faster than other bases due to byte alignment.
+Base32 and Base64 are faster than other bases. This is because of byte
+alignment.
 
-**Optimization Tips**:
-1. Use `encode_into()` and `decode_into()` for buffer reuse in loops
-2. Prefer Base32 or Base64 for performance-critical applications
-3. Use Base58 or Base16 when human readability is important
+Optimization tips:
 
-**Benchmarks**: Run `cargo bench` to see performance on your system.
+1. Use `encode_into()` and `decode_into()` for buffer reuse in loops.
+2. Prefer Base32 or Base64 for performance-critical code.
+3. Use Base58 or Base16 when human readability is important.
+
+Run `cargo bench` to see performance on your system.
 
 ## Security
 
-- ✅ No panics on arbitrary untrusted input
-- ✅ `#![deny(unsafe_code)]` enforced at compile time
-- ✅ Input validation at all boundaries
-- ✅ 17 dedicated security tests
-- ✅ Fuzzing infrastructure with 4 targets (3 functional + 1 placeholder)
+- No panics on untrusted input.
+- `#![deny(unsafe_code)]` set at the crate root.
+- Input validation at all boundaries.
+- 17 security tests.
+- Fuzzing infrastructure with 3 targets: `fuzz_decode`, `fuzz_encode`,
+  and `fuzz_roundtrip`.
 
-**Best Practices**:
-- For untrusted input, always use strict mode: `decode(input, true)`
-- Implement application-level size limits (see [SECURITY.md](SECURITY.md))
-- For binary data preservation, avoid Identity encoding (use Base64 instead)
+Best practices:
 
-See [SECURITY.md](SECURITY.md) for detailed security information.
+- For untrusted input, use strict mode: `decode(input, true)`.
+- Set application-level size limits. See [SECURITY.md](SECURITY.md).
+- For binary data preservation, do not use Identity encoding. Use Base64.
+
+See [SECURITY.md](SECURITY.md) for the full security policy.
 
 ## Concurrency
 
-All public types are **fully thread-safe**:
+All public types are thread-safe:
 
-- ✅ All types implement `Send` + `Sync`
-- ✅ No interior mutability
-- ✅ No data races possible
-- ✅ Verified with 20 thread safety tests
+- All types implement `Send + Sync`.
+- No interior mutability.
+- No data races.
+- 20 thread safety tests verify these properties.
 
-**Concurrent Usage**:
+Concurrent usage:
+
 ```rust
 use std::sync::Arc;
 use std::thread;
@@ -265,7 +243,7 @@ let handles: Vec<_> = (0..10)
 
 for handle in handles {
     let encoded = handle.join().unwrap();
-    // All threads produce identical results
+    // All threads give the same result.
 }
 ```
 
@@ -273,16 +251,17 @@ See [CONCURRENCY.md](CONCURRENCY.md) for detailed concurrency information.
 
 ## CLI Tool
 
-The crate includes a command-line tool for encoding/decoding, located in the
-`cli/` directory.
+The crate includes a command-line tool in the `cli/` directory.
 
 Build the CLI:
+
 ```bash
 cd cli
 cargo build --release
 ```
 
 Example usage:
+
 ```bash
 # Encode data
 echo "hello world" | multibase encode --base base64
@@ -298,20 +277,21 @@ multibase encode --base base58btc --input "hello world"
 
 The crate has 142 tests:
 
-- **142 tests total** (excluding ignored tests)
-  - 12 unit tests
-  - 63 integration tests
-  - 16 property-based tests (using proptest)
-  - 17 security tests
-  - 20 thread safety tests
-  - 14 documentation tests
+- 12 unit tests.
+- 63 integration tests.
+- 16 property-based tests with proptest.
+- 17 security tests.
+- 20 thread safety tests.
+- 14 documentation tests.
 
 Run all tests:
+
 ```bash
 cargo test --all
 ```
 
 Run specific test suites:
+
 ```bash
 cargo test --test lib          # Integration tests
 cargo test --test properties   # Property-based tests
@@ -320,11 +300,13 @@ cargo test --test thread_safety # Concurrency tests
 ```
 
 Run benchmarks:
+
 ```bash
 cargo bench
 ```
 
-Run fuzzing (requires cargo-fuzz):
+Run fuzzing (requires `cargo-fuzz`):
+
 ```bash
 cargo install cargo-fuzz
 cargo fuzz run fuzz_decode
@@ -341,35 +323,29 @@ cargo doc --open
 ```
 
 Additional documentation:
-- [SECURITY.md](SECURITY.md) - Security review and best practices
-- [CONCURRENCY.md](CONCURRENCY.md) - Thread safety analysis
-- [CHANGELOG.md](CHANGELOG.md) - Version history and migration notes
+
+- [SECURITY.md](SECURITY.md) — Security review and best practices.
+- [CONCURRENCY.md](CONCURRENCY.md) — Thread safety analysis.
+- [CHANGELOG.md](CHANGELOG.md) — Version history and migration notes.
 
 ## Maintainers
 
-This Repo: [@dhuseby](https://github.com/dhuseby).
+This repo: [@dhuseby](https://github.com/dhuseby).
 
-Captain: [@dignifiedquire](https://github.com/dignifiedquire).
-
-Contributors: [@koushiro](https://github.com/koushiro), and [others](https://github.com/cryptidtech/multi-base/graphs/contributors).
+Original author: [@dignifiedquire](https://github.com/dignifiedquire).
 
 ## Contribute
 
-Contributions welcome! Please check out [the issues](https://github.com/cryptidtech/multi-base/issues).
-
-Check out our [contributing document](https://github.com/multiformats/multiformats/blob/master/contributing.md) for more information on how we work, and about contributing in general.
-
-Please be aware that all interactions related to multiformats are subject to the IPFS [Code of Conduct](https://github.com/ipfs/community/blob/master/code-of-conduct.md).
+Contributions are welcome. Please check out
+[the issues](https://github.com/cryptidtech/multi-base/issues).
 
 ### Development Guidelines
 
-- Run `cargo fmt` before committing
-- Run `cargo clippy -- -D warnings` to check for issues
-- Add tests for new features
-- Update documentation for API changes
-- Run full test suite: `cargo test --all`
-
-Small note: If editing the README, please conform to the [standard-readme](https://github.com/RichardLitt/standard-readme) specification.
+- Run `cargo fmt` before you commit.
+- Run `cargo clippy -- -D warnings` to check for issues.
+- Add tests for new features.
+- Update documentation for API changes.
+- Run the full test suite: `cargo test --all`.
 
 ## License
 

@@ -1,6 +1,6 @@
 [package]
 name = "multi-base"
-version = "1.0.3"
+version = "1.0.4"
 authors = ["Friedel Ziegelmayer <dignifiedquire@gmail.com>", "Dave Grantham <dwg@linuxprogrammer.org>"]
 edition = "2024"
 rust-version = "1.85"
@@ -24,7 +24,7 @@ thiserror = { version = "2.0", default-features = false }
 [dev-dependencies]
 criterion = { version = "0.8", features = ["html_reports"] }
 proptest = "1.4"
-rand = "0.8"
+rand = "0.10"
 
 [lints.clippy]
 pedantic = { level = "warn", priority = -1 }

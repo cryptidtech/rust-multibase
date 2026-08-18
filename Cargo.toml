@@ -16,14 +16,14 @@ default = ["std"]
 std = ["data-encoding/std"]
 
 [dependencies]
-base-x = { version = "0.2.7", default-features = false }
-data-encoding = { version = "2.3.1", default-features = false, features = ["alloc"] }
-data-encoding-macro = "0.1.9"
+base-x = { version = "0.2", default-features = false }
+data-encoding = { version = "2.11", default-features = false, features = ["alloc"] }
+data-encoding-macro = "0.1"
 thiserror = { version = "2.0", default-features = false }
 
 [dev-dependencies]
 criterion = { version = "0.8", features = ["html_reports"] }
-proptest = "1.4"
+proptest = "1.11"
 rand = "0.10"
 
 [lints.clippy]
